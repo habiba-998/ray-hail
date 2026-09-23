@@ -1,0 +1,5 @@
+# Optional extras – the app runs without them.
+# rasterio: enables GeoTIFF export of index rasters
+rasterio>=1.3
+# geemap: handy for exploring Earth Engine data in notebooks (not required by the app)
+geemap>=0.32

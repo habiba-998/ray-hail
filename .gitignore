@@ -1,0 +1,35 @@
+# --- environments / build ---
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# --- SECRETS: never commit credentials ---
+.streamlit/secrets.toml
+.env
+.env.*
+*.pem
+*.p12
+*.key
+*.json.key
+# Google service-account / OAuth key files (downloaded JSON keys)
+*service-account*.json
+*service_account*.json
+*credentials*.json
+*-key.json
+client_secret*.json
+.config/
+credentials
+
+# --- private field data ---
+data/ground_truth/labels.csv
+
+# --- editor / OS / tooling ---
+.vscode/
+.idea/
+.claude/
+.DS_Store
+Thumbs.db
+desktop.ini

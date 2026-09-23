@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 120" role="img" aria-label="RAY logo">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0F766E"/>
+      <stop offset="1" stop-color="#65A30D"/>
+    </linearGradient>
+  </defs>
+  <!-- orbit + satellite -->
+  <ellipse cx="60" cy="62" rx="50" ry="20" fill="none" stroke="#0F766E" stroke-width="3" transform="rotate(-20 60 62)" opacity=".55"/>
+  <rect x="94" y="22" width="14" height="8" rx="1.5" fill="#0B2530" transform="rotate(-20 101 26)"/>
+  <!-- water drop with leaf -->
+  <path d="M60 18 C60 18 30 55 30 75 A30 30 0 0 0 90 75 C90 55 60 18 60 18 Z" fill="url(#g)"/>
+  <path d="M48 86 C50 70 62 62 76 60 C72 74 62 84 48 86 Z" fill="#fff" opacity=".92"/>
+  <path d="M50 84 L70 64" stroke="#65A30D" stroke-width="2"/>
+  <text x="112" y="72" font-family="Inter, Segoe UI, sans-serif" font-size="46" font-weight="800" fill="#0B2530">RAY</text>
+  <text x="222" y="72" font-family="Tajawal, Segoe UI, sans-serif" font-size="40" font-weight="800" fill="#0F766E">رَيّ</text>
+  <text x="114" y="98" font-family="Inter, Segoe UI, sans-serif" font-size="13" fill="#5B6770">Smarter Irrigation from Space</text>
+</svg>
