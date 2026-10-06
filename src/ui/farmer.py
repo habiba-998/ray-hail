@@ -8,20 +8,25 @@ crop facts from src/knowledge.py. Nothing technical (data sources, indices, algo
 """
 from __future__ import annotations
 
+import datetime as dt
+import logging
+
 import numpy as np
+import pandas as pd
 import streamlit as st
 
-from .. import fusion, knowledge, ml
+from .. import analysis, fusion, knowledge, ml
 from ..config import CLASS_COLORS
 from ..image_analysis import ANALYZER, prepare_for_storage
-from .common import (Ctx, anomaly_watch, finite, fmt, priority_zones, render_farm_map, synced_control,
+from .common import (ANOMALY_NOTE_FACTOR, Ctx, anomaly_watch, ee_ts, finite, fmt, priority_zones, render_farm_map, synced_control,
                      synced_select, zone_row)
-from .i18n import count_areas, is_ar, ltr, t, tr
+from .i18n import area_noun, count_areas, is_ar, ltr, t, tr
 
 ICON = {"HIGH": "‼", "MODERATE": "!", "HEALTHY": "✓", "NO_CROP": "–", "NO_DATA": "?"}
 EMOJI = {"HIGH": "🔴", "MODERATE": "🟡", "HEALTHY": "🟢", "NO_CROP": "⚪", "NO_DATA": "⚫"}
 TEXT_COLOR = {"HIGH": "#A12F2B", "MODERATE": "#7A5600", "HEALTHY": "#1E5B38", "NO_CROP": "#5E6E66", "NO_DATA": "#5E6E66"}
 PAGES = ["home", "map", "zones", "plant", "water", "log", "about"]
+log = logging.getLogger("ray")
 ACTIONS = ["act_none", "act_fix", "act_water", "act_treat", "act_expert", "act_other"]
 
 
@@ -437,22 +442,158 @@ def page_log(c: Ctx) -> None:
                 _validation_form(c, r["id"], r.get("crop_id") or "unknown", top["cause"] if top else None, key=f"logval_{r['id']}")
 
 
+def _zone_trend(c: Ctx, z: dict):
+    """Real vegetation-condition series of one area (cached satellite query, or the local demo farm).
+
+    Returns (series, slope per 10 days) or None when fewer than 3 real observations exist. Nothing is interpolated.
+    """
+    zb = (z["min_lon"], z["min_lat"], z["max_lon"], z["max_lat"])
+    try:
+        if c.use_ee:
+            ts = ee_ts(zb, str(c.start), str(c.end + dt.timedelta(days=1)), c.max_cloud)
+        else:
+            ts = c.farm.timeseries(zb)
+    except Exception as exc:  # noqa: BLE001 -- optional context, never blocks the page
+        log.warning("zone trend skipped: %s", exc)
+        return None
+    if ts is None or ts.empty or "NDVI" not in ts:
+        return None
+    ts = ts.dropna(subset=["NDVI"])
+    ts = ts[ts.date <= pd.Timestamp(c.date)]
+    if len(ts) < 3:
+        return None
+    return ts, analysis.trend_slope(ts, "NDVI")
+
+
+def _why_lines(z: dict) -> list[str]:
+    """Plain-language reasons built only from this area's existing rule points (no new thresholds)."""
+    pts = {k: v[0] for k, v in z["rules"].items()}
+    lines = []
+    if pts.get("NDVI vs farm median"):
+        lines.append(t("why_plant"))
+    if pts.get("NDMI (canopy water)"):
+        lines.append(t("why_moisture"))
+    if pts.get("LST vs farm mean (°C)") is None:
+        lines.append(t("why_heat_na"))
+    elif pts["LST vs farm mean (°C)"]:
+        lines.append(t("why_heat"))
+    if pts.get("NDVI change (~2 weeks)"):
+        lines.append(t("why_change"))
+    if pts.get("NDRE (chlorophyll)"):
+        lines.append(t("why_green"))
+    share = z.get("anomaly_share")
+    if finite(share) and share >= ANOMALY_NOTE_FACTOR * ml.IF_CONTAMINATION:
+        lines.append(t("why_unusual"))
+    return lines if any(x != t("why_heat_na") for x in lines) else [t("why_none"), *lines]
+
+
+def _cause_card(title_key: str, lines: list[str], r: dict | None = None, source_id: str | None = None) -> None:
+    """One possible cause: plain explanation + whether the available data supports it or it needs a field check."""
+    if r and r["score"] > 0:
+        ev = level_badge(r["level"], r["level_ar"]) + f" <span class='muted'>· {t('ev_supported')}</span>"
+    else:
+        ev = f"<span class='lvl none'>{t('ev_field')}</span>"
+    body = "".join(f"<li>{t(k)}</li>" for k in lines)
+    st.markdown(f"<div class='card' style='margin-bottom:8px'><b>{t(title_key)}</b><ul style='margin:6px 0'>{body}</ul>"
+                f"<div>{ev}</div></div>", unsafe_allow_html=True)
+    if r and r["score"] > 0:
+        with st.expander(f"{t('why_reasons')} — {t(title_key)}"):
+            for reason in r["reasons"]:
+                st.markdown(f"- {fusion.reason_text(reason, is_ar())}")
+    s = knowledge.source(source_id) if source_id else None
+    if s:
+        st.caption(f"{t('source')}: [{s['publisher']}]({s['url']})")
+
+
 def page_water(c: Ctx) -> None:
     question(t("irr_title"))
     st.markdown(f"<div class='card soft'>ⓘ {t('irr_dss')}</div>", unsafe_allow_html=True)
-    section(t("irr_list"))
-    for k in range(1, 7):
-        st.checkbox(t(f"irr_check_{k}"), key=f"irr_{k}")
-    st.warning(t("irr_rule"))
-    section(t("irr_zones"))
+
+    # 1. irrigation status of the farm (counts of the existing classes)
+    counts = c.scored.cls.value_counts()
+    n_r, n_m, n_h = (int(counts.get(k, 0)) for k in ("HIGH", "MODERATE", "HEALTHY"))
+    section(t("irr_status"))
+    st.markdown(
+        f"<div class='card'><div class='status-line'>🔴 {count_areas(n_r, 'check')}</div>"
+        f"<div class='status-line'>🟡 {count_areas(n_m, 'watch')}</div>"
+        f"<div class='status-line'>🟢 {t('irr_ok_line', n=area_noun(n_h))}</div></div>", unsafe_allow_html=True)
+
     prio = priority_zones(c)
-    if len(prio):
-        for r in prio.itertuples(index=False):
-            st.button(f"{EMOJI[r.cls]} {t('zone')} {r.zone_id} — {cls_label(r.cls)}", on_click=go, args=("zones", r.zone_id),
-                      width="stretch", key=f"b_irr_{r.zone_id}")
-    else:
+    if not len(prio):
         st.markdown(f"<div class='card soft'>✓ {t('irr_none')}</div>", unsafe_allow_html=True)
-    weather_line(c)
+    else:
+        # 2. highest priority + shortcuts (map with the area selected / plant check)
+        top = str(prio.iloc[0].zone_id)
+        section(t("irr_top", z=top))
+        b1, b2 = st.columns(2)
+        b1.button(t("btn_show_on_map", z=top), on_click=go, args=("map", top), type="primary", width="stretch", key="b_irr_map")
+        b2.button(t("btn_plant_check"), on_click=go, args=("plant", top), width="stretch", key="b_irr_plant")
+
+        # 3. possible water stress in the chosen area (always hedged)
+        ids = [str(x) for x in prio.zone_id]
+        synced_select(t("irr_zone_pick"), ids, "zone_sel", lambda zz: zone_label(zz, zone_row(c, zz)["cls"]))
+        z = zone_row(c, st.session_state.zone_sel)
+        causes = {r["cause"]: r for r in zone_causes(c, z)}
+        wscore = causes["water"]["score"]
+        head = t("ws_likely") if wscore >= 3 else t("ws_some") if wscore >= 1 else t("ws_none")
+        st.markdown(
+            f"<div class='zone-card' style='border-inline-start-color:{CLASS_COLORS[z['cls']]}'>"
+            f"<div class='z'>📍 {t('zone')} {z['zone_id']}</div>"
+            f"<div class='s' style='color:{TEXT_COLOR[z['cls']]}'>💧 {head}</div>"
+            f"<div class='d'>{t('ws_explain')}</div></div>", unsafe_allow_html=True)
+
+        # 4. why did it appear? (rule points in plain words) + comparison with the other areas
+        section(t("ws_why"))
+        st.markdown("\n".join(f"- {w}" for w in _why_lines(z)))
+        rank = ids.index(str(z["zone_id"])) + 1
+        st.caption(t("cmp_top") if rank == 1 else t("cmp_rank", r=rank, n=len(ids)))
+        weather_line(c)
+
+        # 5. change over time (real images only)
+        section(t("trend_title"))
+        trend = _zone_trend(c, z)
+        if trend and finite(trend[1]):
+            ts, slope = trend
+            st.markdown(f"<div class='status-line'>{t('trend_up') if slope > 0.02 else t('trend_down') if slope < -0.02 else t('trend_flat')}</div>",
+                        unsafe_allow_html=True)
+            st.line_chart(ts.set_index("date")["NDVI"].rename(t("trend_axis")), height=200)
+            st.caption(t("trend_basis", n=len(ts), a=ltr(ts.date.min().strftime("%Y-%m-%d")), b=ltr(ts.date.max().strftime("%Y-%m-%d"))),
+                       unsafe_allow_html=True)
+        else:
+            st.caption(t("trend_na"))
+
+        # 6. possible causes (fertilisation never names a specific nutrient)
+        section(t("causes_title"))
+        st.caption(t("causes_note"))
+        _cause_card("cz_water", ["cz_water_1", "cz_water_2", "cz_water_3", "cz_water_4"], causes["water"])
+        _cause_card("cz_heat", ["cz_heat_1"], causes["heat"])
+        _cause_card("cz_soil", ["cz_soil_1", "cz_soil_2", "cz_soil_3"])
+        _cause_card("cz_salt", ["cz_salt_1"], source_id="fao_water_quality")
+        _cause_card("cz_pest", ["cz_pest_1"], max(causes["disease"], causes["pest"], key=lambda r: r["score"]))
+        _cause_card("cz_fert", ["cz_fert_1", "cz_fert_2"], causes["nutrient"])
+        st.markdown(f"<div class='note-card'>ⓘ {t('yellow_many')}</div>", unsafe_allow_html=True)
+
+    # 7. what to check, grouped (replaces the former flat checklist)
+    section(t("q_check"))
+    for grp, n in (("chk_sys", 5), ("chk_soil", 5), ("chk_plant", 5), ("chk_fert", 4)):
+        with st.expander(t(grp), expanded=grp == "chk_sys"):
+            for k in range(1, n + 1):
+                st.checkbox(t(f"{grp}_{k}"), key=f"irr_{grp}_{k}")
+
+    # 8. what do I do now?
+    section(t("now_title"))
+    st.markdown("\n".join(f"{i}. {t(f'now_{i}')}" for i in range(1, 8)))
+    st.warning(t("irr_rule"))
+    st.caption("📷 " + t("now_photo"))
+
+    # 9. area priorities (existing priority list, now with high / medium labels)
+    section(t("prio_title"))
+    for r in prio.itertuples(index=False):
+        st.button(f"{t('zone')} {r.zone_id}: {t('prio_high') if r.cls == 'HIGH' else t('prio_mid')}", on_click=go,
+                  args=("zones", r.zone_id), width="stretch", key=f"b_irr_{r.zone_id}")
+    st.markdown(f"<div class='muted'>{t('prio_ok', n=area_noun(n_h))}</div>", unsafe_allow_html=True)
+
+    # existing context: crop water need, areas without crop
     crop_id = st.session_state.get("crop", "unknown")
     cr = knowledge.crop(crop_id)
     val = cr["water_requirement_ar"] if is_ar() else cr["water_requirement_mm"]
@@ -464,6 +605,7 @@ def page_water(c: Ctx) -> None:
     if nc:
         section(t("no_crop_title"))
         st.markdown(f"<div class='card'>⚪ {t('no_crop_text', zones='، '.join(nc))}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='card soft'>ⓘ {t('dss_goal')}</div>", unsafe_allow_html=True)
 
 
 def page_about(c: Ctx) -> None:

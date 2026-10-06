@@ -79,6 +79,30 @@ def run_all(at, where: str) -> None:
         words = set(re.findall(r"[؀-ۿ]+", txt))
         coll = [w for w in COLLOQUIAL if w in words] + (["فيه منطقة"] if "فيه منطقة" in txt else [])
         check(not coll, f"{where} page {page}: no colloquial Arabic {coll}")
+    # irrigation page: decision support, hedged wording, shortcuts to the map / plant check
+    at.session_state["fpage"] = "water"
+    at.run()
+    txt = visible_text(at)
+    for phrase in ("حالة الري", "ماذا أفعل الآن؟", "لا تغيّر كمية الري قبل التحقق من السبب ميدانيًا.", "أولًا: نظام الري",
+                   "رابعًا: التسميد", "أولوية المناطق", "وليس نظامًا للتحكم التلقائي في الري"):
+        check(phrase in txt, f"{where}: irrigation page shows «{phrase}»")
+    check("تم تشخيص" not in txt and not {"لتر", "لترات", "م³"} & set(re.findall(r"[؀-ۿ³م]+", txt)), f"{where}: irrigation page gives no diagnosis or water volume")
+    btn = [b for b in at.button if b.key == "b_irr_map"]
+    if btn:
+        check("إجهاد مائي" in txt, f"{where}: possible water stress assessment shown")
+        check("الأسباب المحتملة" in txt and "اصفرار" in txt, f"{where}: possible causes + yellowing note shown")
+        check("تطور حالة المنطقة" in txt, f"{where}: time-trend section shown")
+        at.button(key="b_irr_map").click().run()
+        no_errors(at, f"{where} irrigation → map")
+        check(at.session_state["fpage"] == "map" and f" {at.session_state['zone_sel']} " in f" {btn[0].label} ",
+              f"{where}: 'show on map' opens the map with the priority area selected")
+        at.session_state["fpage"] = "water"
+        at.run()
+        at.button(key="b_irr_plant").click().run()
+        no_errors(at, f"{where} irrigation → plant")
+        check(at.session_state["fpage"] == "plant", f"{where}: 'plant check' opens the plant page")
+    else:
+        check("لا توجد اليوم منطقة تحتاج إلى فحص الري" in txt, f"{where}: irrigation page states no area needs a check")
     at.session_state["fpage"] = "home"
     at.run()
     check("ما الذي يحتاج إلى انتباه في مزرعتي؟" in visible_text(at), f"{where}: home question in Standard Arabic")

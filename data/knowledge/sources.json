@@ -147,6 +147,13 @@
       "url": "https://commons.wikimedia.org/",
       "date_retrieved": "2026-10-06",
       "usage": "Per-image licence (Public domain / CC BY / CC BY-SA) – author and licence shown with each image"
+    },
+    "fao_water_quality": {
+      "title": "Water quality for agriculture (FAO Irrigation and Drainage Paper 29), Chapter 2 – Salinity problems (osmotic effect)",
+      "publisher": "FAO (R.S. Ayers & D.W. Westcot)",
+      "url": "https://www.fao.org/4/t0234e/T0234E02.htm",
+      "date_retrieved": "2026-10-06",
+      "usage": "FAO publication – cited and summarised with attribution"
     }
   }
 }
