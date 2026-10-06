@@ -20,18 +20,19 @@ Saudi Arabia is highly water-scarce and agriculture is its largest water user. H
 
 RAY has two modes that share the **same results**; switching mode never recomputes the analysis. There is a language switch (**العربية | English**) at the top, and a data badge that always says whether you are seeing **real Google Earth Engine data** or **DEMO DATA**.
 
-### 👨‍🌾 Farmer mode (default)
-Designed so a farmer understands the message in 5–10 seconds, with no technical terms. It has large touch targets, high contrast and works on phones.
+### 👨‍🌾 Farmer mode (default, Arabic first)
+One screen → one decision, in plain language, green + white, large touch targets, works on phones. The farmer journey: **Where is the problem? → What could the cause be? → What do I photograph? → What do I check? → What is the better decision?**
 
-| Page | Content |
-|---|---|
-| **🏠 Home** | **Farm Status** card (Farm looks healthy / Some areas need attention / Area needs inspection), **Today's Priority** (e.g. 🔴 A4 · Potential water stress · "Inspect irrigation before applying additional water"), an "Also worth a look" note for zones flagged only by the anomaly detector (e.g. B4), and four large buttons |
-| **🗺️ Farm Map** | Real Sentinel-2 image with the zones coloured and labelled by status icon (✓ ● ⚠ –). Tap a square to open a panel with status, RAY score, "What this means", "What to do" and **View details** |
-| **📍 Zone Details** | Status and score; plain-language signals (vegetation condition, moisture, temperature, recent change) taken from the existing rule points; the NDVI/NDRE/NDMI/LST values are in a collapsible "Technical satellite indicators" section |
-| **💧 Irrigation** | Irrigation Check cards (Priority, Area, Recommendation, Why?, "screening signal, not a field diagnosis"), a field checklist, areas with no crop, and how RAY helps. No water volumes |
-| **ℹ️ About** | What RAY is, how colours are decided, data sources, and **all limitations** |
+| Page | Question it answers | Content |
+|---|---|---|
+| **🏠 الرئيسية / Home** | What needs my attention today? | Farm status, 🟢/🟡/🔴 zone counts, the most important zone (e.g. 📍 A4 · "تحتاج فحص — تغير غير طبيعي محتمل") with **افحص المنطقة**, anomaly-only notes (e.g. B4), crop selection |
+| **🗺️ خريطة المزرعة / Map** | Where? | Real Sentinel-2 image, zones coloured + icon-labelled; tap a zone → status + **عرض التفاصيل** |
+| **📍 المناطق / Zones** | What could the cause be? | Six possible causes (💧 water, ☀️ heat, 🦠 disease, 🐛 pest, 🧪 nutrient, 🌱 other) ranked by *fit with the evidence* (strong/moderate/weak/none) with "why?", recent weather, the selected crop's common diseases & pests (sourced, with licensed reference images), technical values in an expander |
+| **📷 فحص النبات / Plant check** | What do I photograph and check? | Zone + crop → photo upload/preview → symptom checklist, soil, spread → **حلّل**: colour screening of the photo, possible causes, "symptoms match…" crop problems, what to check → save observation → record the **field result** (ground truth) |
+| **💧 الري / Irrigation** | What is the better decision? | Per-zone checklist (soil moisture, water reaching, plants, disease/pest, weather), "don't add water before you know the cause", crop seasonal water need (FAO), no-crop zones. No automatic irrigation, no volumes |
+| **ℹ️ عن رَيّ / About** | — | Concept, data sources, privacy, where observations are stored, all limitations |
 
-Farm status is derived from the existing classes: any HIGH zone → "Area needs inspection"; any MODERATE → "Some areas need attention"; otherwise "Farm looks healthy". No new classification is introduced. A zone gets the "Also worth a look" note when the rules class it HEALTHY but its share of Isolation-Forest-unusual pixels is at least twice the farm-wide share set by the model. This is presentation only, and the note says explicitly that the zone is *not* classified as water stressed.
+Farm status is derived from the existing classes (any HIGH → "an area needs inspection"; any MODERATE → "follow-up"; else "normal"). Possible causes come from `src/fusion.py` — transparent, rule-based evidence points (satellite rules, Isolation-Forest share, weather, farmer answers, photo colours). **They are not probabilities and not a diagnosis.**
 
 ### 🔬 Technical mode (AI & Technical Analysis)
 The full expert dashboard for judges and specialists:
@@ -43,6 +44,9 @@ The full expert dashboard for judges and specialists:
 | **Analytics** | Zone comparison chart (stress score, NDVI, NDRE, NDMI, LST, unusual pixels) for the selected zone, NDVI/NDRE/NDMI time series (zone vs farm) with sudden-drop markers, trend slopes, Landsat LST + ERA5-Land weather, zone table, CSV export, Isolation Forest scatter |
 | **Water Intelligence** | Zone status, bilingual recommendation, per-rule points breakdown, zone-vs-farm indicators, inspection list |
 | **AI & Method** | 8-step live pipeline (imagery → preprocessing → spectral features → thermal → anomaly detection → stress assessment → priority zones → field inspection), Isolation Forest details, transparent rules, priority zones, Random Forest (NOT TRAINED), indices, real-vs-demo table |
+| **Sources & Fusion** | Evaluated sources (integrated / context / not used and why), Sentinel-1 SAR per zone, weather connectors (ERA5-Land active, NCM not connected), the fusion rule table and live causes for the selected zone |
+| **Crops & Knowledge** | Crop database, diseases & pests with scientific names and source links, image licences, all sources |
+| **Data & IoT** | Storage backend and counts (no individual records shown), database architecture, IoT readiness |
 | **Limitations** | The full limitations list |
 
 Settings (data source, Earth Engine project, area, zone grid, dates, analysis date, rule thresholds) are in the collapsible sidebar (**»** at the top left).
@@ -60,7 +64,10 @@ ray/
 ├── assets/logo.svg
 ├── data/
 │   ├── README.md
+│   ├── knowledge/            # crops.json, problems.json, images.json, sources.json (sourced, versioned)
+│   ├── user_data/            # local SQLite + farmer photos – git-ignored, never committed
 │   └── ground_truth/labels_template.csv   # format for real field labels
+├── db/schema.sql             # full PostgreSQL / Supabase schema (active + ready tables)
 ├── src/
 │   ├── config.py             # AOIs, dataset IDs, ALL thresholds, colours
 │   ├── data_acquisition.py   # REAL data: Earth Engine auth + Sentinel-2 / Landsat / ERA5 queries
@@ -71,6 +78,11 @@ ray/
 │   ├── ml.py                 # Isolation Forest (unsupervised) + Random Forest (only with real labels)
 │   ├── visualization.py      # Folium map, Plotly charts
 │   ├── raster_io.py          # optional GeoTIFF export (rasterio)
+│   ├── knowledge.py          # loads + validates data/knowledge/*.json
+│   ├── fusion.py             # evidence fusion → possible causes (rule-based, traceable)
+│   ├── image_analysis.py     # farmer photo: quality checks + colour screening (pluggable; not a classifier)
+│   ├── weather.py            # weather connectors: ERA5-Land (active), NCM (slot, not connected)
+│   ├── storage.py            # observations/photos/validations: Supabase or local SQLite
 │   └── ui/                   # presentation only – no scientific logic
 │       ├── farmer.py         # Farmer mode pages
 │       ├── technical.py      # Technical mode (original dashboard tabs + Limitations)
@@ -80,6 +92,7 @@ ray/
 └── tests/
     ├── smoke_test.py         # end-to-end check of the demo pipeline without the UI
     ├── ee_check.py           # real Earth Engine data check
+    ├── core_test.py          # knowledge base, fusion, photo screening, storage, weather
     └── ui_test.py            # headless test of every mode / page / language (Streamlit AppTest)
 ```
 
@@ -91,7 +104,12 @@ The flow is **acquisition → preprocessing → indices → zone statistics → 
 |---|---|---|---|
 | Sentinel-2 MSI L2A surface reflectance | `COPERNICUS/S2_SR_HARMONIZED` | 10–20 m, ~5 days | True colour, NDVI, NDRE, NDMI, cloud mask (SCL) |
 | Landsat 8 & 9 Collection-2 L2 | `LANDSAT/LC08/C02/T1_L2`, `LANDSAT/LC09/C02/T1_L2` | 100 m thermal (served at 30 m), ~8 days combined | Land surface temperature (ST_B10) |
-| ERA5-Land daily aggregates | `ECMWF/ERA5_LAND/DAILY_AGGR` | ~11 km, daily reanalysis | Air temperature, precipitation (context only) |
+| ERA5-Land daily aggregates | `ECMWF/ERA5_LAND/DAILY_AGGR` | ~11 km, daily reanalysis (published several days late) | Air temperature, humidity (from dew point), wind, precipitation (context) |
+| Sentinel-1 GRD | `COPERNICUS/S1_GRD` (IW, VV+VH) | 10 m, 12 days over this farm | Backscatter per zone — context only, not scored |
+| National Center for Meteorology (NCM) | — | — | **Not connected**: data access requires a licence for a legal entity ([service page](https://www.ncm.gov.sa/en/services/our-services/meteorological-data-publishing-or-utilization-service)); connector slot in `src/weather.py` |
+| Crop / disease / pest knowledge | FAO, UC Statewide IPM, EPPO, peer-reviewed articles | — | `data/knowledge/` with source URL and retrieval date per record |
+| Reference images | Wikimedia Commons | — | Licence + author recorded per image; shown only when opened |
+| MODIS / VIIRS / Sentinel-3 | evaluated | 250 m – 1 km | **Not used**: coarser than the 1 km zones |
 | Esri World Imagery | tile basemap | — | Visual reference only (never analysed) |
 
 Processing details:
@@ -222,6 +240,14 @@ In demo mode, a yellow **DEMO DATA – SIMULATED** banner appears on every scree
 11. Close with "How RAY supports more efficient irrigation": inspect first, fix faults before adding water, and flag irrigation of non-cropped areas.
 
 ## 14. Limitations
+
+The complete, current list is shown in the app (About page and Technical → Limitations; source: `LIMITATIONS` in `src/ui/common.py`). Key points:
+- Possible causes are a rule-based fit with the evidence — not probabilities, not a diagnosis.
+- The photo check measures colours only; it is not a trained disease classifier and has no measured accuracy.
+- No supervised model is trained (not enough labelled field data). Field results are stored for future calibration; RAY does not learn automatically.
+- NCM is not connected; no IoT sensors are connected.
+- On the hosted demo without Supabase, observations are stored locally and are lost when the app restarts.
+
 
 - Thresholds are not calibrated for specific crops, growth stages or Hail soils.
 - Spectral indicators cannot distinguish water stress from other stressors.

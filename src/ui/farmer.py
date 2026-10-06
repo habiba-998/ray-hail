@@ -137,7 +137,7 @@ def weather_line(c: Ctx) -> None:
         return
     rh = fmt(w["rh_mean"], 0, "%") if finite(w["rh_mean"]) else "—"
     st.markdown(f"<div class='muted'>🌦️ {t('weather_line', t=w['tmax_mean'], rh=ltr(rh), p=w['precip_sum'])}</div>", unsafe_allow_html=True)
-    st.caption(t("weather_src", src=w["source"].split(" (")[0], d=ltr(w["last_date"])))
+    st.caption(t("weather_src", src=w["source"].split(" (")[0], d=ltr(w["last_date"])), unsafe_allow_html=True)
 
 
 def zone_causes(c: Ctx, z: dict, **extra) -> list[dict]:
@@ -343,7 +343,7 @@ def _plant_result(c: Ctx, z: dict, res: dict) -> None:
             st.caption(t("matched_on", m=words))
             problem_details(m["problem"])
     else:
-        st.caption(t("matches_none") if res["symptoms"] else t("pick_crop") if res["crop"] in ("unknown", "other") else t("matches_none"))
+        st.caption(t("pick_crop") if res["crop"] in ("unknown", "other") else t("matches_none"))
 
     section(t("check_title"))
     steps = [t(f"gen_check_{i}") for i in range(1, 5)]

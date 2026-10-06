@@ -329,7 +329,7 @@ def weather(lat: float, lon: float, start: str, end: str) -> pd.DataFrame:
 S1_COLLECTION = "COPERNICUS/S1_GRD"
 
 
-def s1_zone_stats(bounds: Bounds, zones_records: list[dict], date: str, window_days: int = 6) -> tuple[pd.DataFrame, dict]:
+def s1_zone_stats(bounds: Bounds, zones_records: list[dict], date: str, window_days: int = 12) -> tuple[pd.DataFrame, dict]:
     """Mean Sentinel-1 C-band backscatter (VV, VH in dB) per zone from the acquisition closest to `date`.
 
     Uses IW-mode GRD scenes with both VV and VH. Averaging is done in linear power and converted back to dB.

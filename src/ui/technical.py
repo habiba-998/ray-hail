@@ -359,7 +359,7 @@ def render(c: Ctx) -> None:
 SOURCE_EVAL = [
     ("Sentinel-2 L2A (MSI)", "10–20 m", "~5 days", "Optical: NDVI, NDRE, NDMI, true colour", "✅ Integrated (core)"),
     ("Landsat 8 / 9 C2 L2", "30 m (thermal 100 m)", "~8 days combined", "Land surface temperature (LST)", "✅ Integrated (core)"),
-    ("Sentinel-1 GRD (C-band SAR)", "10 m", "~6–12 days", "VV / VH backscatter – cloud-independent; soil moisture & canopy structure", "✅ Integrated as context (not scored)"),
+    ("Sentinel-1 GRD (C-band SAR)", "10 m", "12 days over this farm (observed)", "VV / VH backscatter – cloud-independent; soil moisture & canopy structure", "✅ Integrated as context (not scored)"),
     ("ERA5-Land daily", "~11 km", "daily (published with delay)", "Air temperature, humidity, wind, rain", "✅ Integrated (weather)"),
     ("NCM – National Center for Meteorology", "stations", "–", "Official Saudi observations", "⏸️ Connector ready, not connected (licence required)"),
     ("MODIS (Terra/Aqua)", "250 m – 1 km", "daily", "NDVI / LST", "❌ Evaluated, not used: coarser than the 1 km zones"),
@@ -380,7 +380,7 @@ def _render_sources(c: Ctx) -> None:
         try:
             s1, meta = ee_s1(c.bounds, c.zones.to_dict("records"), c.date)
             if s1.empty:
-                st.info("No Sentinel-1 IW scene within ±6 days of the analysis date.")
+                st.info("No Sentinel-1 IW scene within ±12 days of the analysis date.")
             else:
                 st.caption(f"Acquisition {meta['s1_date']} ({meta.get('orbit_pass', '')}); zone means of linear backscatter, shown in dB.")
                 st.dataframe(s1.merge(c.scored[["zone_id", "cls", "ndmi"]], on="zone_id").round(2), hide_index=True)
