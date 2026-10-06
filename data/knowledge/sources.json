@@ -1,0 +1,152 @@
+{
+  "_about": "Registry of every external source used by RAY's knowledge base. Text in crops.json / problems.json is a short paraphrase or translation of these sources; follow the URL for the full original. date_retrieved = date the page was checked.",
+  "sources": {
+    "fao_iwm3_ch2": {
+      "title": "Irrigation Water Management: Irrigation Water Needs (Training manual no. 3), Chapter 2 – Crop water needs, Table 5",
+      "publisher": "FAO (C. Brouwer & M. Heibloem, 1986)",
+      "url": "https://www.fao.org/4/s2022e/s2022e02.htm",
+      "date_retrieved": "2026-10-06",
+      "usage": "FAO publication – cited and summarised with attribution"
+    },
+    "fao_iwm3_ch3": {
+      "title": "Irrigation Water Management: Irrigation Water Needs (Training manual no. 3), Chapter 3 – total growing period",
+      "publisher": "FAO (C. Brouwer & M. Heibloem, 1986)",
+      "url": "https://www.fao.org/4/s2022e/s2022e07.htm",
+      "date_retrieved": "2026-10-06",
+      "usage": "FAO publication – cited and summarised with attribution"
+    },
+    "fao_date_ch12": {
+      "title": "Date palm cultivation – Chapter XII: Diseases and pests of date palm",
+      "publisher": "FAO Plant Production and Protection Paper 156",
+      "url": "https://www.fao.org/4/y4360e/y4360e0g.htm",
+      "date_retrieved": "2026-10-06",
+      "usage": "FAO publication – cited and summarised with attribution"
+    },
+    "fao_rpw_guidelines": {
+      "title": "Red Palm Weevil: Guidelines on management practices",
+      "publisher": "FAO",
+      "url": "https://openknowledge.fao.org/server/api/core/bitstreams/9dea1914-74dd-4662-9816-a11df9710822/content",
+      "date_retrieved": "2026-10-06",
+      "usage": "FAO publication – cited and summarised with attribution"
+    },
+    "ucipm_stripe_rust": {
+      "title": "Stripe Rusts of Wheat and Barley – Small Grains Pest Management Guidelines",
+      "publisher": "UC Statewide IPM Program, University of California",
+      "url": "https://ipm.ucanr.edu/agriculture/small-grains/stripe-rusts-of-wheat-and-barley/",
+      "date_retrieved": "2026-10-06",
+      "usage": "© Regents of the University of California – short summary with link"
+    },
+    "ucipm_leaf_rust": {
+      "title": "Leaf Rusts of Wheat and Barley, Crown Rust of Oats – Small Grains Pest Management Guidelines",
+      "publisher": "UC Statewide IPM Program, University of California",
+      "url": "https://ipm.ucanr.edu/agriculture/small-grains/leaf-rusts-of-wheat-and-barley-crown-rust-of-oats/",
+      "date_retrieved": "2026-10-06",
+      "usage": "© Regents of the University of California – short summary with link"
+    },
+    "ucipm_rwa": {
+      "title": "Russian Wheat Aphid – Small Grains Pest Management Guidelines",
+      "publisher": "UC Statewide IPM Program, University of California",
+      "url": "https://ipm.ucanr.edu/agriculture/small-grains/russian-wheat-aphid/",
+      "date_retrieved": "2026-10-06",
+      "usage": "© Regents of the University of California – short summary with link"
+    },
+    "ucipm_bcoa": {
+      "title": "Bird Cherry-Oat Aphid – Small Grains Pest Management Guidelines",
+      "publisher": "UC Statewide IPM Program, University of California",
+      "url": "https://ipm.ucanr.edu/agriculture/small-grains/bird-cherry-oat-aphid/",
+      "date_retrieved": "2026-10-06",
+      "usage": "© Regents of the University of California – short summary with link"
+    },
+    "ucipm_alfalfa_weevil": {
+      "title": "Weevils (Alfalfa and Egyptian Alfalfa) – Alfalfa Pest Management Guidelines",
+      "publisher": "UC Statewide IPM Program, University of California",
+      "url": "https://ipm.ucanr.edu/agriculture/alfalfa/weevils-alfalfa-and-egyptian-alfalfa/",
+      "date_retrieved": "2026-10-06",
+      "usage": "© Regents of the University of California – short summary with link"
+    },
+    "ucipm_blue_alfalfa_aphid": {
+      "title": "Blue Alfalfa Aphid – Alfalfa Pest Management Guidelines",
+      "publisher": "UC Statewide IPM Program, University of California",
+      "url": "https://ipm.ucanr.edu/agriculture/alfalfa/blue-alfalfa-aphid/",
+      "date_retrieved": "2026-10-06",
+      "usage": "© Regents of the University of California – short summary with link"
+    },
+    "ucipm_alfalfa_phytophthora": {
+      "title": "Phytophthora Root and Crown Rot – Alfalfa Pest Management Guidelines",
+      "publisher": "UC Statewide IPM Program, University of California",
+      "url": "https://ipm.ucanr.edu/agriculture/alfalfa/phytophthora-root-and-crown-rot/",
+      "date_retrieved": "2026-10-06",
+      "usage": "© Regents of the University of California – short summary with link"
+    },
+    "ucipm_citrus_leafminer": {
+      "title": "Citrus Leafminer – Citrus Pest Management Guidelines",
+      "publisher": "UC Statewide IPM Program, University of California",
+      "url": "https://ipm.ucanr.edu/agriculture/citrus/citrus-leafminer/",
+      "date_retrieved": "2026-10-06",
+      "usage": "© Regents of the University of California – short summary with link"
+    },
+    "ucipm_citrus_phytophthora": {
+      "title": "Phytophthora Root Rot – Citrus Pest Management Guidelines",
+      "publisher": "UC Statewide IPM Program, University of California",
+      "url": "https://www2.ipm.ucanr.edu/agriculture/citrus/Phytophthora-Root-Rot/",
+      "date_retrieved": "2026-10-06",
+      "usage": "© Regents of the University of California – short summary with link"
+    },
+    "ucipm_potato_late_blight": {
+      "title": "Late Blight – Potato Pest Management Guidelines",
+      "publisher": "UC Statewide IPM Program, University of California",
+      "url": "https://ipm.ucanr.edu/agriculture/potato/late-blight/",
+      "date_retrieved": "2026-10-06",
+      "usage": "© Regents of the University of California – short summary with link"
+    },
+    "ucipm_potato_early_blight": {
+      "title": "Early Blight – Potato Pest Management Guidelines",
+      "publisher": "UC Statewide IPM Program, University of California",
+      "url": "https://ipm.ucanr.edu/agriculture/potato/early-blight/",
+      "date_retrieved": "2026-10-06",
+      "usage": "© Regents of the University of California – short summary with link"
+    },
+    "ucipm_tomato_whiteflies": {
+      "title": "Whiteflies – Tomato Pest Management Guidelines",
+      "publisher": "UC Statewide IPM Program, University of California",
+      "url": "https://ipm.ucanr.edu/agriculture/tomato/whiteflies/",
+      "date_retrieved": "2026-10-06",
+      "usage": "© Regents of the University of California – short summary with link"
+    },
+    "pmc_tuta_absoluta": {
+      "title": "Control of the tomato leaf miner, Tuta absoluta (Meyrick) … larvae in laboratory using entomopathogenic nematodes (PMC7265902)",
+      "publisher": "Peer-reviewed article (open access, PubMed Central)",
+      "url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7265902/",
+      "date_retrieved": "2026-10-06",
+      "usage": "Open-access article – cited and summarised"
+    },
+    "eppo_tuta_absoluta": {
+      "title": "Phthorimaea absoluta (GNORAB) – EPPO Global Database",
+      "publisher": "European and Mediterranean Plant Protection Organization (EPPO)",
+      "url": "https://gd.eppo.int/taxon/GNORAB",
+      "date_retrieved": "2026-10-06",
+      "usage": "Reference link"
+    },
+    "pmc_dubas": {
+      "title": "Relationship between Dubas Bug (Ommatissus lybicus) Infestation and the Development of Fungal-Induced Leaf Spots in Date Palms (Insects 2023, PMC10053011)",
+      "publisher": "Peer-reviewed article (open access, PubMed Central)",
+      "url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10053011/",
+      "date_retrieved": "2026-10-06",
+      "usage": "Open-access article – cited and summarised"
+    },
+    "ncm_data_license": {
+      "title": "Meteorological Data Publishing or Utilization Service",
+      "publisher": "National Center for Meteorology (NCM), Saudi Arabia",
+      "url": "https://www.ncm.gov.sa/en/services/our-services/meteorological-data-publishing-or-utilization-service",
+      "date_retrieved": "2026-10-06",
+      "usage": "Describes the licence required to use/publish NCM data"
+    },
+    "wikimedia_commons": {
+      "title": "Wikimedia Commons (reference images; licence recorded per image)",
+      "publisher": "Wikimedia Foundation",
+      "url": "https://commons.wikimedia.org/",
+      "date_retrieved": "2026-10-06",
+      "usage": "Per-image licence (Public domain / CC BY / CC BY-SA) – author and licence shown with each image"
+    }
+  }
+}

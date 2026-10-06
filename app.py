@@ -15,16 +15,19 @@ import base64
 import datetime as dt
 import json
 import os
+import uuid
 from pathlib import Path
 
 import pandas as pd
 import streamlit as st
 
 from src import analysis, ml
+from src import weather as wxmod
+from src.storage import make_store
 from src.config import AOI, AOI_PRESETS, APP_NAME_AR, DEFAULT_PRESET, Thresholds
 from src.preprocessing import make_zone_grid
 from src.ui import farmer, styles, technical
-from src.ui.common import Ctx, ee_connect, ee_dates, ee_samples, ee_zone_stats, get_demo_farm, synced_control
+from src.ui.common import Ctx, ee_connect, ee_dates, ee_samples, ee_weather, ee_zone_stats, get_demo_farm, synced_control
 from src.ui.i18n import is_ar, t
 
 st.set_page_config(page_title="RAY | رَيّ – Satellite irrigation intelligence", page_icon="💧", layout="wide",
@@ -40,8 +43,9 @@ ICON_B64 = base64.b64encode(
 ).decode()
 DEMO_SRC, EE_SRC = "Demo mode (simulated data)", "Google Earth Engine (real satellite data)"
 
-st.session_state.setdefault("lang", "en")
+st.session_state.setdefault("lang", "ar")  # Arabic first
 st.session_state.setdefault("mode", "farmer")
+st.session_state.setdefault("crop", "unknown")  # "Not specified" until the farmer chooses
 styles.inject(rtl=is_ar() and st.session_state.mode == "farmer")
 
 
@@ -233,7 +237,31 @@ if st.session_state.get("zone_sel") not in zone_ids:
     worst = scored.sort_values("score", ascending=False, na_position="last")
     st.session_state.zone_sel = str(worst.iloc[0].zone_id)
 
+# Farm identity (no personal data) and per-browser-session id used to keep each visitor's observations private
+farm_names = {k: (f"مزرعة حائل {i + 1}" if not k.startswith("Custom") else "موقع مخصص") for i, k in enumerate(AOI_PRESETS)}
+st.session_state.setdefault("session_id", uuid.uuid4().hex)
+
+
+@st.cache_resource(show_spinner=False)
+def _store(cfg_key: str):
+    try:
+        cfg = {"supabase": dict(st.secrets["supabase"])} if "supabase" in st.secrets else {}
+    except Exception:  # noqa: BLE001 -- no secrets file
+        cfg = {}
+    return make_store(cfg)
+
+
+# Weather context (ERA5-Land now; NCM connector slot not connected) – real mode only
+wx = wx_summary = None
+if use_ee:
+    d0 = (pd.Timestamp(date) - pd.Timedelta(days=30)).strftime("%Y-%m-%d")
+    d1 = (pd.Timestamp(date) + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
+    wx = wxmod.get_weather(lat, lon, d0, d1, ee_weather)
+    wx_summary = wxmod.summarize(wx.df, date)
+
 ctx = Ctx(
+    crop=st.session_state.get("crop", "unknown"), store=_store("v1"), session_id=st.session_state.session_id,
+    farm_id=f"hail-{lat:.3f}-{lon:.3f}", farm_name=farm_names.get(preset, preset), wx=wx, wx_summary=wx_summary,
     use_ee=use_ee, farm=farm, bounds=bounds, zones=zones, scored=scored, ref=ref, pix=pix, samples=samples,
     if_feats=if_feats, meta=meta, dates=dates, date=date, prev_date=prev_date, thr=thr, lat=lat, lon=lon,
     half_km=half_km, n_rows=n_rows, n_cols=n_cols, start=start, end=end, max_cloud=max_cloud,

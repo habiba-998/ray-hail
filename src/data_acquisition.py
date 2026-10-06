@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 import os
 
+import numpy as np
 import pandas as pd
 
 from .config import (
@@ -278,13 +279,20 @@ def lst_timeseries(bounds: Bounds, start: str, end: str) -> pd.DataFrame:
     return df.groupby("date", as_index=False)["LST"].mean().sort_values("date")
 
 
+ERA5_BANDS = ["temperature_2m", "temperature_2m_max", "total_precipitation_sum",
+              "dewpoint_temperature_2m", "u_component_of_wind_10m", "v_component_of_wind_10m"]
+
+
 def weather(lat: float, lon: float, start: str, end: str) -> pd.DataFrame:
-    """Daily air temperature and precipitation from ERA5-Land (reanalysis, ~11 km)."""
+    """Daily weather from ERA5-Land (reanalysis, ~11 km grid) at the farm centre.
+
+    Columns: air temperature (daily mean / max, °C), precipitation (mm), relative humidity (%, approximated from
+    the daily-mean temperature and dew point with the Magnus formula), wind speed (m/s, magnitude of the daily-mean
+    10 m wind vector – underestimates gusty days) and wind direction (° the wind blows FROM).
+    """
     ee = _ee()
     pt = ee.Geometry.Point([lon, lat])
-    col = ee.ImageCollection(ERA5_COLLECTION).filterDate(start, end).select(
-        ["temperature_2m", "temperature_2m_max", "total_precipitation_sum"]
-    )
+    col = ee.ImageCollection(ERA5_COLLECTION).filterDate(start, end).select(ERA5_BANDS)
 
     def per_image(img):
         v = img.reduceRegion(reducer=ee.Reducer.first(), geometry=pt, scale=11132)
@@ -295,11 +303,70 @@ def weather(lat: float, lon: float, start: str, end: str) -> pd.DataFrame:
     if df.empty or "temperature_2m" not in df:
         return pd.DataFrame()
     df["date"] = pd.to_datetime(df["t"], unit="ms")
-    return pd.DataFrame(
+    t = df["temperature_2m"] - 273.15
+    out = pd.DataFrame(
         {
             "date": df["date"],
-            "air_temp_c": df["temperature_2m"] - 273.15,
+            "air_temp_c": t,
             "air_temp_max_c": df["temperature_2m_max"] - 273.15,
             "precip_mm": df["total_precipitation_sum"] * 1000,
         }
-    ).sort_values("date")
+    )
+    if "dewpoint_temperature_2m" in df:
+        td = df["dewpoint_temperature_2m"] - 273.15
+        out["rel_humidity_pct"] = (100 * np.exp(17.625 * td / (243.04 + td)) / np.exp(17.625 * t / (243.04 + t))).clip(0, 100)
+    if "u_component_of_wind_10m" in df and "v_component_of_wind_10m" in df:
+        u, v = df["u_component_of_wind_10m"], df["v_component_of_wind_10m"]
+        out["wind_speed_ms"] = np.hypot(u, v)
+        out["wind_dir_deg"] = (270 - np.degrees(np.arctan2(v, u))) % 360
+    out["source"] = "ERA5-Land (ECMWF/Copernicus via Google Earth Engine)"
+    return out.sort_values("date")
+
+
+# ---------------------------------------------------------------------------
+# Sentinel-1 SAR (supplementary context – NOT used by the stress rules)
+# ---------------------------------------------------------------------------
+S1_COLLECTION = "COPERNICUS/S1_GRD"
+
+
+def s1_zone_stats(bounds: Bounds, zones_records: list[dict], date: str, window_days: int = 6) -> tuple[pd.DataFrame, dict]:
+    """Mean Sentinel-1 C-band backscatter (VV, VH in dB) per zone from the acquisition closest to `date`.
+
+    Uses IW-mode GRD scenes with both VV and VH. Averaging is done in linear power and converted back to dB.
+    Backscatter responds to surface/soil moisture and canopy structure; it is cloud-independent but not
+    calibrated for crop stress here, so RAY shows it as context only.
+    """
+    ee = _ee()
+    region = _rect(bounds)
+    d = ee.Date(date)
+    col = (
+        ee.ImageCollection(S1_COLLECTION)
+        .filterBounds(region)
+        .filterDate(d.advance(-window_days, "day"), d.advance(window_days + 1, "day"))
+        .filter(ee.Filter.eq("instrumentMode", "IW"))
+        .filter(ee.Filter.listContains("transmitterReceiverPolarisation", "VV"))
+        .filter(ee.Filter.listContains("transmitterReceiverPolarisation", "VH"))
+    )
+    info = col.aggregate_array("system:time_start").getInfo()
+    if not info:
+        return pd.DataFrame(), {"s1_date": None}
+    target = pd.Timestamp(date).value // 10**6
+    best = min(info, key=lambda ms: abs(ms - target))
+    best_day = pd.to_datetime(best, unit="ms").strftime("%Y-%m-%d")
+    bd = ee.Date(best_day)
+    day = col.filterDate(bd, bd.advance(1, "day"))
+    passes = sorted(set(day.aggregate_array("orbitProperties_pass").getInfo()))
+    lin = day.select(["VV", "VH"]).map(lambda im: ee.Image(10).pow(im.divide(10)).copyProperties(im)).mean()
+    fc = ee.FeatureCollection(
+        [ee.Feature(ee.Geometry.Rectangle([z["min_lon"], z["min_lat"], z["max_lon"], z["max_lat"]]), {"zone_id": z["zone_id"]})
+         for z in zones_records]
+    )
+    res = lin.reduceRegions(collection=fc, reducer=ee.Reducer.mean(), scale=20).getInfo()
+    rows = []
+    for f in res["features"]:
+        p = f["properties"]
+        vv, vh = p.get("VV"), p.get("VH")
+        vv_db = 10 * np.log10(vv) if vv else np.nan
+        vh_db = 10 * np.log10(vh) if vh else np.nan
+        rows.append({"zone_id": p["zone_id"], "vv_db": vv_db, "vh_db": vh_db, "vh_minus_vv_db": vh_db - vv_db})
+    return pd.DataFrame(rows), {"s1_date": best_day, "orbit_pass": ", ".join(passes)}

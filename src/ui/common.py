@@ -72,7 +72,8 @@ def synced_control(label: str, options: list, state_key: str, format_func) -> st
     def _sync():
         st.session_state[state_key] = st.session_state[wkey]
 
-    st.segmented_control(label, options, format_func=format_func, key=wkey, on_change=_sync, required=True,
+    labels = {o: format_func(o) for o in options}  # resolved now, in the user's language (not lazily later)
+    st.segmented_control(label, options, format_func=labels.get, key=wkey, on_change=_sync, required=True,
                          label_visibility="collapsed")
     return st.session_state[state_key]
 
@@ -89,7 +90,39 @@ def ee_zone_stats(bounds, zones_records, date, prev_date):
 
 @st.cache_data(ttl=3600, show_spinner="Rendering satellite layer…")
 def ee_layer(bounds, date, layer, farm_ref, thr):
-    return gee.layer_tile_url(bounds, date, layer, farm_ref, thr)
+    url = gee.layer_tile_url(bounds, date, layer, farm_ref, thr)
+    if url:
+        _warm_tiles(url, bounds)
+    return url
+
+
+def _warm_tiles(url: str, bounds: tuple) -> None:
+    """Request the central tiles once in the background.
+
+    Earth Engine computes a new map layer on the first tile request; that first request can take ~20 s and be closed
+    by the server, and the browser map does not retry failed tiles. Warming the tiles server-side means they are
+    usually ready by the time the user's browser asks for them. Failures here are harmless.
+    """
+    import math
+    import threading
+    import urllib.request
+
+    lat, lon = (bounds[1] + bounds[3]) / 2, (bounds[0] + bounds[2]) / 2
+
+    def xy(z):
+        n = 2 ** z
+        return int((lon + 180) / 360 * n), int((1 - math.asinh(math.tan(math.radians(lat))) / math.pi) / 2 * n)
+
+    def run():
+        for z in (13, 14, 15):
+            x, y = xy(z)
+            for dx, dy in ((0, 0), (1, 0), (0, 1), (-1, 0), (0, -1)):
+                try:
+                    urllib.request.urlopen(url.format(z=z, x=x + dx, y=y + dy), timeout=60).read()
+                except Exception:  # noqa: BLE001
+                    pass
+
+    threading.Thread(target=run, daemon=True).start()
 
 
 @st.cache_data(ttl=3600, show_spinner="Sampling cropped pixels…")
@@ -110,6 +143,28 @@ def ee_lst_ts(bounds, start, end):
 @st.cache_data(ttl=3600, show_spinner="Loading ERA5-Land weather…")
 def ee_weather(lat, lon, start, end):
     return gee.weather(lat, lon, start, end)
+
+
+@st.cache_data(ttl=3600, show_spinner="Loading Sentinel-1 radar…")
+def ee_s1(bounds, zones_records, date):
+    return gee.s1_zone_stats(bounds, zones_records, date)
+
+
+def synced_select(label: str, options: list, state_key: str, format_func, **kw):
+    """Selectbox whose value lives in st.session_state[state_key] (survives language changes / page switches)."""
+    from .i18n import lang
+
+    wkey = f"_s_{state_key}_{lang()}"
+    if st.session_state.get(state_key) not in options:
+        st.session_state[state_key] = options[0]
+    st.session_state[wkey] = st.session_state[state_key]
+
+    def _sync():
+        st.session_state[state_key] = st.session_state[wkey]
+
+    labels = {o: format_func(o) for o in options}  # resolved now, in the user's language (not lazily later)
+    st.selectbox(label, options, format_func=labels.get, key=wkey, on_change=_sync, **kw)
+    return st.session_state[state_key]
 
 
 # ---------------------------------------------------------------------------
@@ -237,5 +292,25 @@ LIMITATIONS: list[tuple[str, str]] = [
      "قد تعطي القواعد إنذارات خاطئة في بداية نمو المحصول عندما يكون الغطاء النباتي قليلًا وغير منتظم."),
     ("No water-saving, early-detection or accuracy figures have been measured.",
      "لم تُقَس أي أرقام لتوفير المياه أو الكشف المبكر أو الدقة."),
+    ("Potential water stress is not proof: the same satellite signals can come from heat, diseases, pests, nutrient "
+     "deficiency, salinity, harvest/cutting or the crop's growth stage.",
+     "الإجهاد المائي المحتمل ليس دليلًا: نفس إشارات الأقمار الصناعية قد تنتج عن الحرارة أو الأمراض أو الآفات أو نقص "
+     "العناصر أو الملوحة أو الحصاد/الحش أو مرحلة نمو المحصول."),
+    ("The 'possible causes' ranking is a transparent rule-based fit with the available evidence, not a probability and "
+     "not a diagnosis.", "ترتيب «الأسباب المحتملة» توافق مبني على قواعد واضحة مع الدلائل المتوفرة، وليس احتمالًا ولا تشخيصًا."),
+    ("The photo check measures colours only (green / yellow / brown). It is not a trained disease classifier and has "
+     "no measured accuracy.", "فحص الصورة يقيس الألوان فقط (أخضر/أصفر/بني)، وليس نموذجًا مدرّبًا لتشخيص الأمراض وليس له دقة مقاسة."),
+    ("Crop-specific calibration is still required; thresholds are the same for all crops in this version.",
+     "ما زالت المعايرة حسب المحصول مطلوبة؛ العتبات نفسها لكل المحاصيل في هذه النسخة."),
+    ("No supervised model is trained yet because there are not enough labelled field observations. Field results "
+     "recorded in RAY are stored for future calibration; RAY does not learn automatically.",
+     "لا يوجد نموذج إشرافي مدرّب حاليًا بسبب عدم توفر بيانات ميدانية مصنفة كافية. نتائج الفحص الميداني المسجلة تُحفظ "
+     "للمعايرة مستقبلًا، ورَيّ لا يتعلم تلقائيًا."),
+    ("Weather comes from ERA5-Land reanalysis (~11 km grid, published several days late). The National Center for "
+     "Meteorology is not connected: its data require a licence.",
+     "بيانات الطقس من ERA5-Land (شبكة ~١١ كم وتُنشر متأخرة عدة أيام). المركز الوطني للأرصاد غير متصل لأن بياناته تتطلب ترخيصًا."),
+    ("Sentinel-1 radar is shown as context only and is not used in the scores (no local calibration).",
+     "رادار Sentinel-1 يُعرض كسياق فقط ولا يدخل في التقييم (لا توجد معايرة محلية)."),
+    ("No IoT sensors are connected in this version.", "لا توجد حساسات (IoT) متصلة في هذه النسخة."),
     ("Field validation is required before relying on the results.", "يلزم التحقق الميداني قبل الاعتماد على النتائج."),
 ]

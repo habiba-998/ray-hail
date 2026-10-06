@@ -60,8 +60,18 @@ def main(project: str | None) -> int:
     for layer in ("True Color", "NDVI", "NDRE", "NDMI"):
         try:
             url = gee.layer_tile_url(bounds, d, layer, ref["ndvi_median"] if ref["ndvi_median"] == ref["ndvi_median"] else 0.6, vars(Thresholds()))
-            with urllib.request.urlopen(url.format(z=14, x=x, y=y), timeout=60) as r:
-                body, ctype = r.read(), r.headers.get("Content-Type")
+            # The first tile of a NEW map layer is computed on demand and the server may close that first request;
+            # retry up to twice and report it (the app warms tiles in the background for the same reason).
+            for retries in range(3):
+                try:
+                    with urllib.request.urlopen(url.format(z=14, x=x, y=y), timeout=60) as r:
+                        body, ctype = r.read(), r.headers.get("Content-Type")
+                    break
+                except Exception:  # noqa: BLE001
+                    if retries == 2:
+                        raise
+            if retries:
+                print(f"       ({layer}: succeeded after {retries} retry/retries – cold first tile)")
             alpha = np.asarray(Image.open(io.BytesIO(body)).convert("RGBA"))[..., 3]
             filled = float((alpha > 0).mean())  # share of tile pixels that carry data (not masked)
             good = ctype.startswith("image/") and filled > 0.5

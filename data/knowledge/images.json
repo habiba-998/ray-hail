@@ -1,0 +1,156 @@
+{
+ "stripe_rust": {
+  "file": "File:Stripe rust on wheat.jpg",
+  "image_url": "https://upload.wikimedia.org/wikipedia/commons/d/dd/Stripe_rust_on_wheat.jpg",
+  "source_page": "https://commons.wikimedia.org/wiki/File:Stripe_rust_on_wheat.jpg",
+  "license": "Public domain",
+  "license_url": "",
+  "author": "",
+  "description": "",
+  "source": "Wikimedia Commons",
+  "date_retrieved": "2026-10-06"
+ },
+ "leaf_rust": {
+  "file": "File:Wheat leaf rust on wheat.jpg",
+  "image_url": "https://upload.wikimedia.org/wikipedia/commons/d/d4/Wheat_leaf_rust_on_wheat.jpg",
+  "source_page": "https://commons.wikimedia.org/wiki/File:Wheat_leaf_rust_on_wheat.jpg",
+  "license": "Public domain",
+  "license_url": "",
+  "author": "James Kolmer",
+  "description": "Close-up of wheat leaf rust (Puccinia triticinia) on wheat.",
+  "source": "Wikimedia Commons",
+  "date_retrieved": "2026-10-06"
+ },
+ "russian_wheat_aphid": {
+  "file": "File:Russian wheat aphid.jpg",
+  "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e6/Russian_wheat_aphid.jpg/960px-Russian_wheat_aphid.jpg",
+  "source_page": "https://commons.wikimedia.org/wiki/File:Russian_wheat_aphid.jpg",
+  "license": "Public domain",
+  "license_url": "",
+  "author": "Peggy Greb",
+  "description": "Russia wheat aphid on a susceptible barley leaf.",
+  "source": "Wikimedia Commons",
+  "date_retrieved": "2026-10-06"
+ },
+ "bird_cherry_oat_aphid": {
+  "file": "File:Rhopalosiphum padi usda.png",
+  "image_url": "https://upload.wikimedia.org/wikipedia/commons/d/de/Rhopalosiphum_padi_usda.png",
+  "source_page": "https://commons.wikimedia.org/wiki/File:Rhopalosiphum_padi_usda.png",
+  "license": "Public domain",
+  "license_url": "",
+  "author": "Steyskal, George C; Murphy, William L., Jr; Hoover, Edna M for USDA",
+  "description": "Rhopalosiphum padi, Aphid",
+  "source": "Wikimedia Commons",
+  "date_retrieved": "2026-10-06"
+ },
+ "alfalfa_weevil": {
+  "file": "File:Alfalfa weevil UGA 5445213.png",
+  "image_url": "https://upload.wikimedia.org/wikipedia/commons/b/be/Alfalfa_weevil_UGA_5445213.png",
+  "source_page": "https://commons.wikimedia.org/wiki/File:Alfalfa_weevil_UGA_5445213.png",
+  "license": "CC BY 3.0 us",
+  "license_url": "https://creativecommons.org/licenses/by/3.0/us/deed.en",
+  "author": "Whitney Cranshaw, Colorado State University, Bugwood.org - See more at: http://www.invasive.org/browse/detail.cfm?imgnum=5445213#sthash.gR1eYbvS.dpuf",
+  "description": "Pousse de luzerne attaquée par des larves du phytonome de la luzerne, Hypera postica",
+  "source": "Wikimedia Commons",
+  "date_retrieved": "2026-10-06"
+ },
+ "blue_alfalfa_aphid": {
+  "file": "File:HEMI Aphididae Acyrthosiphon kondoi.png",
+  "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/59/HEMI_Aphididae_Acyrthosiphon_kondoi.png/960px-HEMI_Aphididae_Acyrthosiphon_kondoi.png",
+  "source_page": "https://commons.wikimedia.org/wiki/File:HEMI_Aphididae_Acyrthosiphon_kondoi.png",
+  "license": "CC BY 4.0",
+  "license_url": "https://creativecommons.org/licenses/by/4.0",
+  "author": "Desmond W. Helmore",
+  "description": "(Hemiptera: Aphididae) Acyrthosiphon kondoi illustrated by Des Helmore.",
+  "source": "Wikimedia Commons",
+  "date_retrieved": "2026-10-06"
+ },
+ "red_palm_weevil": {
+  "file": "File:Rhynchophorus ferrugineus MHNT.jpg",
+  "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0d/Rhynchophorus_ferrugineus_MHNT.jpg/960px-Rhynchophorus_ferrugineus_MHNT.jpg",
+  "source_page": "https://commons.wikimedia.org/wiki/File:Rhynchophorus_ferrugineus_MHNT.jpg",
+  "license": "CC BY-SA 4.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+  "author": "Didier Descouens",
+  "description": "red palm weevil - male - Dorsal side Locality: La Croix-Valmer, Var, Provence-Alpes-Côte d'Azur, France",
+  "source": "Wikimedia Commons",
+  "date_retrieved": "2026-10-06"
+ },
+ "dubas_bug": {
+  "file": "File:Dubas bug adult.jpg",
+  "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c0/Dubas_bug_adult.jpg/960px-Dubas_bug_adult.jpg",
+  "source_page": "https://commons.wikimedia.org/wiki/File:Dubas_bug_adult.jpg",
+  "license": "CC BY-SA 4.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+  "author": "Roy Bateman",
+  "description": "Ommatissus lybicus adult - taken on date palm in Oman",
+  "source": "Wikimedia Commons",
+  "date_retrieved": "2026-10-06"
+ },
+ "graphiola_leaf_spot": {
+  "file": "File:Graphiola phoenicis fruiting body.jpg",
+  "image_url": "https://upload.wikimedia.org/wikipedia/commons/e/e1/Graphiola_phoenicis_fruiting_body.jpg",
+  "source_page": "https://commons.wikimedia.org/wiki/File:Graphiola_phoenicis_fruiting_body.jpg",
+  "license": "CC BY 2.0",
+  "license_url": "https://creativecommons.org/licenses/by/2.0",
+  "author": "ScotGov SASA",
+  "description": "Graphiola phoenicis fruiting body",
+  "source": "Wikimedia Commons",
+  "date_retrieved": "2026-10-06"
+ },
+ "citrus_leafminer": {
+  "file": "File:Phyllocnistis citrella damage.jpg",
+  "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/47/Phyllocnistis_citrella_damage.jpg/960px-Phyllocnistis_citrella_damage.jpg",
+  "source_page": "https://commons.wikimedia.org/wiki/File:Phyllocnistis_citrella_damage.jpg",
+  "license": "CC BY 3.0 us",
+  "license_url": "https://creativecommons.org/licenses/by/3.0/us/deed.en",
+  "author": "Jeffrey W. Lotz, Florida Department of Agriculture and Consumer Services, Bugwood.org",
+  "description": "Phyllocnistis citrella",
+  "source": "Wikimedia Commons",
+  "date_retrieved": "2026-10-06"
+ },
+ "citrus_phytophthora": {
+  "file": "File:Lemon tree with phytophtora 02 - foot rot gummosis.jpg",
+  "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/33/Lemon_tree_with_phytophtora_02_-_foot_rot_gummosis.jpg/960px-Lemon_tree_with_phytophtora_02_-_foot_rot_gummosis.jpg",
+  "source_page": "https://commons.wikimedia.org/wiki/File:Lemon_tree_with_phytophtora_02_-_foot_rot_gummosis.jpg",
+  "license": "CC BY-SA 4.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+  "author": "Eiku",
+  "description": "Base du tronc d'un citronnier présentant un suintement de gomme, symptôme d'une probable infestation par Phytophtora infestans.",
+  "source": "Wikimedia Commons",
+  "date_retrieved": "2026-10-06"
+ },
+ "late_blight": {
+  "file": "File:Late blight on potato leaf 2.jpg",
+  "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/aa/Late_blight_on_potato_leaf_2.jpg/960px-Late_blight_on_potato_leaf_2.jpg",
+  "source_page": "https://commons.wikimedia.org/wiki/File:Late_blight_on_potato_leaf_2.jpg",
+  "license": "CC BY 3.0 us",
+  "license_url": "https://creativecommons.org/licenses/by/3.0/us/deed.en",
+  "author": "Howard F. Schwartz, Colorado State University, United States",
+  "description": "A potato leaflet showing late blight infection caused by Phytophthora infestans on a potato field at Peckham.",
+  "source": "Wikimedia Commons",
+  "date_retrieved": "2026-10-06"
+ },
+ "whiteflies": {
+  "file": "File:Bemisia tabaci under leaf of eggplant.jpg",
+  "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e8/Bemisia_tabaci_under_leaf_of_eggplant.jpg/960px-Bemisia_tabaci_under_leaf_of_eggplant.jpg",
+  "source_page": "https://commons.wikimedia.org/wiki/File:Bemisia_tabaci_under_leaf_of_eggplant.jpg",
+  "license": "CC BY-SA 4.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+  "author": "Wee Hong",
+  "description": "Silverleaf whitefly has white waxy wings and yellowish body. It is an insect pest that invade more than 600 plant species, including eggplant, chilli, tomato, okra and cotton. It is distributed in tro",
+  "source": "Wikimedia Commons",
+  "date_retrieved": "2026-10-06"
+ },
+ "tuta_absoluta": {
+  "file": "File:Tuta absoluta Tomato loss.jpg",
+  "image_url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3a/Tuta_absoluta_Tomato_loss.jpg/960px-Tuta_absoluta_Tomato_loss.jpg",
+  "source_page": "https://commons.wikimedia.org/wiki/File:Tuta_absoluta_Tomato_loss.jpg",
+  "license": "CC BY 3.0 us",
+  "license_url": "https://creativecommons.org/licenses/by/3.0/us/deed.en",
+  "author": "Metin GULESCI, Leaf Tobacco, Bugwood.org",
+  "description": "Image: Tomato damaged by the larvae of Tuta absoluta Moth",
+  "source": "Wikimedia Commons",
+  "date_retrieved": "2026-10-06"
+ }
+}

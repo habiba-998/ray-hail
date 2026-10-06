@@ -26,7 +26,8 @@ from ..visualization import (
     zone_grid_heatmap,
     zone_indicator_bars,
 )
-from .common import LIMITATIONS, Ctx, anomaly_watch, ee_lst_ts, ee_ts, ee_weather, fmt, render_farm_map, zone_picker, zone_row
+from .common import (LIMITATIONS, Ctx, anomaly_watch, ee_lst_ts, ee_s1, ee_ts, ee_weather, fmt, render_farm_map,
+                     zone_picker, zone_row)
 
 
 def _tech_label(z, cl):
@@ -46,8 +47,9 @@ def render(c: Ctx) -> None:
     st.caption("Full expert view for judges, engineers and agronomists: satellite indices, thermal data, anomaly detection, "
                "transparent rules, analytics and limitations. Same data and results as Farmer mode.")
 
-    tab_ov, tab_map, tab_an, tab_wi, tab_me, tab_lim = st.tabs(
-        ["📊 Overview", "🛰️ Satellite Map", "📈 Analytics", "💧 Water Intelligence", "🧠 AI & Method", "⚠️ Limitations"]
+    tab_ov, tab_map, tab_an, tab_wi, tab_me, tab_src, tab_kb, tab_data, tab_lim = st.tabs(
+        ["📊 Overview", "🛰️ Satellite Map", "📈 Analytics", "💧 Water Intelligence", "🧠 AI & Method",
+         "🔗 Sources & Fusion", "🌱 Crops & Knowledge", "🗄️ Data & IoT", "⚠️ Limitations"]
     )
 
     # -----------------------------------------------------------------------
@@ -340,11 +342,156 @@ def render(c: Ctx) -> None:
     with tab_me:
         _render_ai_method(c)
 
+    with tab_src:
+        _render_sources(c)
+    with tab_kb:
+        _render_knowledge()
+    with tab_data:
+        _render_data(c)
+
     # -----------------------------------------------------------------------
     # F. Limitations
     # -----------------------------------------------------------------------
     with tab_lim:
         render_limitations(ar=False)
+
+
+SOURCE_EVAL = [
+    ("Sentinel-2 L2A (MSI)", "10–20 m", "~5 days", "Optical: NDVI, NDRE, NDMI, true colour", "✅ Integrated (core)"),
+    ("Landsat 8 / 9 C2 L2", "30 m (thermal 100 m)", "~8 days combined", "Land surface temperature (LST)", "✅ Integrated (core)"),
+    ("Sentinel-1 GRD (C-band SAR)", "10 m", "~6–12 days", "VV / VH backscatter – cloud-independent; soil moisture & canopy structure", "✅ Integrated as context (not scored)"),
+    ("ERA5-Land daily", "~11 km", "daily (published with delay)", "Air temperature, humidity, wind, rain", "✅ Integrated (weather)"),
+    ("NCM – National Center for Meteorology", "stations", "–", "Official Saudi observations", "⏸️ Connector ready, not connected (licence required)"),
+    ("MODIS (Terra/Aqua)", "250 m – 1 km", "daily", "NDVI / LST", "❌ Evaluated, not used: coarser than the 1 km zones"),
+    ("VIIRS", "375 m – 750 m", "daily", "Vegetation / thermal", "❌ Evaluated, not used: coarser than the zones"),
+    ("Sentinel-3 (OLCI / SLSTR)", "300 m – 1 km", "~daily", "Vegetation / thermal", "❌ Evaluated, not used: coarser than the zones"),
+]
+
+
+def _render_sources(c: Ctx) -> None:
+    from .. import fusion, weather as wxmod
+    st.markdown("### Data sources evaluated")
+    st.dataframe(pd.DataFrame(SOURCE_EVAL, columns=["Source", "Spatial resolution", "Revisit", "Used for", "Status"]), hide_index=True)
+    st.caption("A source is integrated only when its resolution and revisit fit 1 km farm zones. More sources do not by "
+               "themselves mean higher accuracy; no accuracy gain has been measured.")
+
+    st.markdown("### 📡 Sentinel-1 SAR per zone (context only)")
+    if c.use_ee:
+        try:
+            s1, meta = ee_s1(c.bounds, c.zones.to_dict("records"), c.date)
+            if s1.empty:
+                st.info("No Sentinel-1 IW scene within ±6 days of the analysis date.")
+            else:
+                st.caption(f"Acquisition {meta['s1_date']} ({meta.get('orbit_pass', '')}); zone means of linear backscatter, shown in dB.")
+                st.dataframe(s1.merge(c.scored[["zone_id", "cls", "ndmi"]], on="zone_id").round(2), hide_index=True)
+                st.caption("Not used in the stress score: backscatter depends on soil moisture, roughness, crop structure and "
+                           "viewing geometry and has not been calibrated locally.")
+        except Exception as exc:  # noqa: BLE001
+            st.warning(f"Sentinel-1 query failed: {exc}")
+    else:
+        st.info("DEMO mode: Sentinel-1 is only available with real Earth Engine data.")
+
+    st.markdown("### 🌦️ Weather connectors")
+    wx = c.wx
+    if wx is not None:
+        st.dataframe(pd.DataFrame([{"Connector": s.name, "Connected": "yes" if s.connected else "no", "Detail": s.detail}
+                                   for s in wx.statuses]), hide_index=True)
+        if not wx.df.empty:
+            w = wx.df.tail(14).copy()
+            w["date"] = w.date.dt.strftime("%Y-%m-%d")
+            st.dataframe(w.drop(columns=["source"]).round(1), hide_index=True)
+            st.caption(f"Source of every value: {wx.source_name}. Humidity is approximated from daily-mean temperature and "
+                       "dew point; wind speed is the magnitude of the daily-mean 10 m wind vector.")
+    else:
+        st.info("Weather is only available with real Earth Engine data.")
+    s = c.wx_summary
+    if s:
+        st.caption(f"Context used by the fusion rules ({s['first_date']} → {s['last_date']}): mean Tmax {s['tmax_mean']:.1f} °C, "
+                   f"RH {s['rh_mean']:.0f} %, rain {s['precip_sum']:.1f} mm. Thresholds: hot ≥ {wxmod.HOT_TMAX_C} °C, warm ≥ "
+                   f"{wxmod.WARM_TMAX_C} °C, dry air ≤ {wxmod.DRY_RH_PCT} % RH, rain ≥ {wxmod.RAIN_MM} mm (prototype values).")
+
+    st.markdown("### 🔗 Evidence fusion (possible causes)")
+    st.markdown(
+        "For each zone RAY ranks six cause categories by how well they **fit the available evidence**. Every point comes "
+        "from a named rule, so the ranking is fully traceable. It is **not a probability and not a diagnosis**; weights are "
+        "prototype values. Field results saved by farmers are stored for future calibration — nothing is learned automatically."
+    )
+    rows = [("Satellite: NDMI rule points", "water +pts"), ("Satellite: LST warmer than farm", "water +1, heat +1"),
+            ("Satellite: NDRE low while NDMI normal", "nutrient +pts"), ("Satellite: weaker / declining NDVI", "disease +1, pest +1, other +1"),
+            ("Isolation Forest unusual share ≥ 2× contamination", "other +1"), ("Weather: hot / warm days", "heat +2 / +1"),
+            ("Weather: very dry air", "water +1"), ("Weather: rain", "disease +1, water −1"),
+            ("Farmer: dry soil / wet soil", "water +2 / water −2, disease +1"), ("Farmer: single plants / widespread", "disease +1, pest +1 / water +1, heat +1"),
+            ("Farmer symptoms (14 tags)", "see SYMPTOM_WEIGHTS in src/fusion.py"), ("Photo colour screening", "yellow → nutrient/water +1; brown → water/disease +1; dark spots → disease +1"),
+            ("Sentinel-1 SAR", "not scored (context only)")]
+    st.dataframe(pd.DataFrame(rows, columns=["Evidence", "Points"]), hide_index=True)
+    st.caption("Levels: ≥5 strong, 3–4 moderate, 1–2 weak, 0 no evidence yet.")
+    z = zone_row(c, st.session_state.zone_sel)
+    causes = fusion.possible_causes(z, weather=c.wx_summary, anomaly_share=z.get("anomaly_share"), contamination=ml.IF_CONTAMINATION)
+    st.markdown(f"**Satellite + weather only, zone {z['zone_id']}:**")
+    st.dataframe(pd.DataFrame([{"Cause": r["en"], "Score": r["score"], "Level": r["level"],
+                                "Evidence": "; ".join(fusion.reason_text(x, False) for x in r["reasons"]) or "—"} for r in causes]),
+                 hide_index=True)
+
+
+def _render_knowledge() -> None:
+    from .. import knowledge
+    st.markdown("### 🌱 Crop database")
+    st.dataframe(pd.DataFrame([{
+        "Crop": f"{cr['icon']} {cr['name_en']}", "Arabic": cr["name_ar"], "Growth period (days)": cr["growth_period_days"] or "not available",
+        "Seasonal water need": cr["water_requirement_mm"] or "not available",
+        "Water source": (knowledge.source(cr["water_source"]) or {}).get("publisher", "—"),
+        "Common problems": len(cr["common_problems"])} for cr in knowledge.crops()]), hide_index=True)
+    st.markdown("### 🦠 Diseases & 🐛 pests")
+    st.dataframe(pd.DataFrame([{
+        "Type": p["type"], "Name": p["name_en"], "Arabic": p["name_ar"], "Scientific name": p["scientific_name"],
+        "Crops": ", ".join(p["crops"]), "Visual tags": ", ".join(p["visual_tags"]),
+        "Reference image": "yes" if p["reference_images"] else "no reference image",
+        "Source": (knowledge.source(p["source"]) or {}).get("url", "")} for p in knowledge.all_problems()]),
+        hide_index=True, column_config={"Source": st.column_config.LinkColumn("Source")})
+    st.markdown("### 🖼️ Reference image credits")
+    imgs = knowledge._load()["images"]
+    st.dataframe(pd.DataFrame([{"Key": k, "Licence": v["license"], "Author": v["author"] or "not stated",
+                                "Page": v["source_page"], "Retrieved": v["date_retrieved"]} for k, v in imgs.items()]),
+                 hide_index=True, column_config={"Page": st.column_config.LinkColumn("Page")})
+    st.markdown("### 📚 All sources")
+    st.dataframe(pd.DataFrame([{"ID": k, "Title": v["title"], "Publisher": v["publisher"], "URL": v["url"],
+                                "Retrieved": v["date_retrieved"], "Usage": v["usage"]} for k, v in knowledge.all_sources().items()]),
+                 hide_index=True, column_config={"URL": st.column_config.LinkColumn("URL")})
+    st.caption("Stored in data/knowledge/*.json (versioned, reviewable). Symptoms are short paraphrases/translations of the "
+               "cited sources; information that was not found is shown as 'not available' rather than estimated.")
+
+
+def _render_data(c: Ctx) -> None:
+    st.markdown("### 🗄️ Storage")
+    try:
+        n = c.store.counts()
+    except Exception as exc:  # noqa: BLE001
+        n = {"observations": None, "validations": None, "photos": None}
+        st.warning(f"Storage not reachable: {exc}")
+    k1, k2, k3 = st.columns(3)
+    k1.metric("Field observations", n["observations"] if n["observations"] is not None else "—")
+    k2.metric("Farmer photos", n["photos"] if n["photos"] is not None else "—")
+    k3.metric("Field validations (ground truth)", n["validations"] if n["validations"] is not None else "—")
+    st.caption(f"Backend: {c.store.name}. {c.store.persistent_note_en} Counts only — individual farmer records and photos "
+               "are not shown here (privacy).")
+    st.markdown("### Database architecture (db/schema.sql)")
+    st.dataframe(pd.DataFrame([
+        ("field_observations", "ACTIVE", "zone, crop, satellite status, symptoms, photo path, screening, possible causes"),
+        ("field_validations", "ACTIVE", "RAY prediction vs. field check vs. actual cause — ground truth for calibration"),
+        ("farmer_images", "READY", "private Storage bucket 'farmer-images' (EXIF removed)"),
+        ("farms / zones / users", "READY", "farm & zone registry; no personal data required"),
+        ("crops / crop_growth_stages / diseases / pests / disease_images / data_sources", "READY", "loaded from data/knowledge/*.json"),
+        ("satellite_observations / weather_observations / analysis_results", "READY", "history for time-series & calibration"),
+        ("iot_devices / iot_observations", "READY", "soil moisture, soil/air temperature, humidity, flow meters"),
+    ], columns=["Table", "Status", "Content"]), hide_index=True)
+    st.markdown("### 📡 IoT readiness")
+    st.markdown("- **No sensors are connected in this version** and none are required to run RAY.\n"
+                "- Schema `iot_devices` + `iot_observations` (device, zone, variable, value, unit, time) is ready for soil moisture, "
+                "soil/air temperature, humidity and irrigation flow.\n"
+                "- Planned use: confirm or reject a satellite 'possible water stress' signal with measured soil moisture.")
+    st.markdown("### Future use of the data")
+    st.markdown("Field validations make it possible to: calibrate local thresholds per crop, train a supervised model once "
+                "enough labelled cases exist, and evaluate the anomaly detector. **None of this is done automatically today.**")
 
 
 def render_limitations(ar: bool) -> None:

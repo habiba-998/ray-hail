@@ -9,3 +9,4 @@ scipy==1.18.1
 scikit-learn==1.9.1
 Pillow==12.3.0
 earthengine-api==1.7.45
+requests==2.34.2

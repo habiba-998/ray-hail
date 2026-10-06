@@ -33,3 +33,8 @@ data/ground_truth/labels.csv
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# --- farmer data: photos & local database (never commit) ---
+data/user_data/
+*.db
+*.sqlite
