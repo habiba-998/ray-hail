@@ -22,7 +22,32 @@ from pathlib import Path
 import pandas as pd
 import streamlit as st
 
-from src import analysis, ml
+
+def _refresh_stale_project_modules() -> None:
+    """Re-import src.* when the project files changed since they were loaded.
+
+    After a git update, Streamlit Community Cloud can run the new app.py while still holding the previously imported
+    src.* modules in memory (e.g. a new app.py calling a translation key that the old, cached i18n module lacks →
+    KeyError). Hashing the source files and dropping src.* from sys.modules when they change guarantees that app.py
+    and its modules always come from the same version. Cheap: only file hashing on each run.
+    """
+    import hashlib
+    import sys
+
+    root = Path(__file__).parent
+    h = hashlib.sha1()
+    for f in sorted([root / "app.py", *(root / "src").rglob("*.py")]):
+        h.update(f.read_bytes())
+    digest = h.hexdigest()
+    if getattr(sys, "_ray_source_digest", None) != digest:
+        for name in [m for m in sys.modules if m == "src" or m.startswith("src.")]:
+            del sys.modules[name]
+        sys._ray_source_digest = digest
+
+
+_refresh_stale_project_modules()
+
+from src import analysis, ml  # noqa: E402  (imported after the stale-module refresh above)
 from src import weather as wxmod
 from src.config import AOI, AOI_PRESETS, DEFAULT_PRESET, Thresholds
 from src.preprocessing import make_zone_grid
