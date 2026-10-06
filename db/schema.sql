@@ -202,6 +202,7 @@ create table if not exists field_validations (
   field_check        text,                          -- e.g. 'soil_dry' | 'soil_not_dry' | 'not_checked'
   actual_cause       text,                          -- water / heat / disease / pest / nutrient / other / none
   actual_problem_id  text,                          -- diseases.id / pests.id when identified
+  action_taken       text,                          -- what the farmer did (repair, irrigation change, treatment …)
   notes              text
 );
 

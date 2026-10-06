@@ -18,6 +18,8 @@ Saudi Arabia is highly water-scarce and agriculture is its largest water user. H
 
 ## 2. What the app does
 
+> **Current interface: farmer-only (Arabic).** The app opens directly on the farmer pages (الرئيسية، خريطة المزرعة، المناطق، فحص النبات، الري، سجل المزرعة، عن رَيّ). No technical settings, data-source names or indices are shown. The technical dashboard described below (`src/ui/technical.py`) is kept in the code for developers and judges reading the code, but it is not reachable from the interface. The farmer map image is produced with `ee.data.computePixels`, so it does not need the `earthengine.maps.create` permission. Data-loading errors are logged on the server and shown to the farmer only as a plain message.
+
 RAY has two modes that share the **same results**; switching mode never recomputes the analysis. There is a language switch (**العربية | English**) at the top, and a data badge that always says whether you are seeing **real Google Earth Engine data** or **DEMO DATA**.
 
 ### 👨‍🌾 Farmer mode (default, Arabic first)

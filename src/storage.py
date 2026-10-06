@@ -30,7 +30,7 @@ OBS_FIELDS = ["id", "created_at", "session_id", "farm_id", "farm_name", "data_mo
               "satellite_date", "satellite_class", "satellite_score", "lat", "lon", "symptoms", "soil_condition",
               "spread", "photo_path", "photo_screening", "possible_causes", "candidate_problems", "notes"]
 VAL_FIELDS = ["id", "created_at", "session_id", "observation_id", "ray_prediction", "field_check", "actual_cause",
-              "actual_problem_id", "notes"]
+              "actual_problem_id", "action_taken", "notes"]
 JSON_FIELDS = {"symptoms", "photo_screening", "possible_causes", "candidate_problems"}
 
 
@@ -41,7 +41,7 @@ def _now() -> str:
 class SQLiteStore:
     name = "SQLite (local)"
     persistent_note_en = "Saved on this server only. On the hosted demo, data are deleted when the app restarts."
-    persistent_note_ar = "تُحفظ على هذا الخادم فقط، وفي النسخة المنشورة قد تُحذف عند إعادة تشغيل التطبيق."
+    persistent_note_ar = "تُحفظ السجلات مؤقتًا، وقد تُحذف عند تحديث التطبيق."
 
     def __init__(self, folder: Path = LOCAL_DIR):
         self.folder = folder
@@ -50,6 +50,12 @@ class SQLiteStore:
         with self._con() as c:
             c.execute(f"CREATE TABLE IF NOT EXISTS field_observations ({', '.join(f + ' TEXT' for f in OBS_FIELDS)})")
             c.execute(f"CREATE TABLE IF NOT EXISTS field_validations ({', '.join(f + ' TEXT' for f in VAL_FIELDS)})")
+            # forward-compatible migration: add columns introduced after the table was first created (no data loss)
+            for table, fields in (("field_observations", OBS_FIELDS), ("field_validations", VAL_FIELDS)):
+                have = {r[1] for r in c.execute(f"PRAGMA table_info({table})")}
+                for f in fields:
+                    if f not in have:
+                        c.execute(f"ALTER TABLE {table} ADD COLUMN {f} TEXT")
 
     @contextmanager
     def _con(self):
@@ -70,13 +76,13 @@ class SQLiteStore:
         row = [json.dumps(rec.get(f), ensure_ascii=False) if f in JSON_FIELDS else (None if rec.get(f) is None else str(rec.get(f)))
                for f in OBS_FIELDS]
         with self._con() as c:
-            c.execute(f"INSERT INTO field_observations VALUES ({','.join('?' * len(OBS_FIELDS))})", row)
+            c.execute(f"INSERT INTO field_observations ({','.join(OBS_FIELDS)}) VALUES ({','.join('?' * len(OBS_FIELDS))})", row)
         return rec["id"]
 
     def save_validation(self, rec: dict) -> str:
         rec = {**rec, "id": str(uuid.uuid4()), "created_at": _now()}
         with self._con() as c:
-            c.execute(f"INSERT INTO field_validations VALUES ({','.join('?' * len(VAL_FIELDS))})",
+            c.execute(f"INSERT INTO field_validations ({','.join(VAL_FIELDS)}) VALUES ({','.join('?' * len(VAL_FIELDS))})",
                       [None if rec.get(f) is None else str(rec.get(f)) for f in VAL_FIELDS])
         return rec["id"]
 
@@ -114,7 +120,7 @@ class SQLiteStore:
 class SupabaseStore:
     name = "Supabase (Postgres + Storage)"
     persistent_note_en = "Saved permanently in the project database (Supabase)."
-    persistent_note_ar = "تُحفظ بشكل دائم في قاعدة بيانات المشروع (Supabase)."
+    persistent_note_ar = "تُحفظ السجلات بشكل دائم."
 
     def __init__(self, url: str, service_key: str, bucket: str = "farmer-images"):
         self.url, self.bucket = url.rstrip("/"), bucket

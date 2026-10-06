@@ -1,238 +1,730 @@
 {
   "_about": "Disease & pest database for RAY. 'symptoms_en' paraphrases the cited source; 'symptoms_ar' is its Arabic translation. 'visual_tags' use the shared vocabulary in 'symptom_vocabulary' and are what the plant-check questionnaire matches against. Reference images are keys into images.json (licence recorded there). An empty list means no reference image is available.",
   "symptom_vocabulary": {
-    "leaf_spots": {"en": "Spots or lesions on leaves", "ar": "بقع على الأوراق"},
-    "rust_pustules": {"en": "Orange / rusty powdery pustules", "ar": "بثور برتقالية أو صدئية"},
-    "yellowing": {"en": "Yellowing leaves", "ar": "اصفرار الأوراق"},
-    "streaks": {"en": "Streaks or stripes along leaves", "ar": "خطوط طولية على الأوراق"},
-    "wilting": {"en": "Wilting, drying or sudden decline", "ar": "ذبول أو جفاف أو تدهور مفاجئ"},
-    "leaf_curl": {"en": "Curled or distorted leaves", "ar": "التفاف أو تشوه الأوراق"},
-    "insects_visible": {"en": "Insects visible on the plant", "ar": "حشرات ظاهرة على النبات"},
-    "honeydew": {"en": "Sticky residue or black sooty mould", "ar": "مادة لزجة أو عفن أسود"},
-    "webbing_dust": {"en": "Fine webbing with dust on fruit/leaves", "ar": "نسيج عنكبوتي مع غبار على الثمار أو الأوراق"},
-    "leaf_mines": {"en": "Tunnels / mines inside leaves", "ar": "أنفاق داخل الأوراق"},
-    "chewed_leaves": {"en": "Chewed or skeletonised leaves", "ar": "أوراق مأكولة أو مخرّمة"},
-    "trunk_damage": {"en": "Holes or oozing fluid on the trunk", "ar": "ثقوب أو سائل يخرج من الجذع"},
-    "root_rot": {"en": "Rotten or discoloured roots", "ar": "جذور متعفنة أو متغيرة اللون"},
-    "fruit_damage": {"en": "Damaged or scarred fruit", "ar": "ثمار متضررة أو مشوهة"}
+    "leaf_spots": {
+      "en": "Spots or lesions on leaves",
+      "ar": "بقع على الأوراق"
+    },
+    "rust_pustules": {
+      "en": "Orange / rusty powdery pustules",
+      "ar": "بثور برتقالية أو صدئية"
+    },
+    "yellowing": {
+      "en": "Yellowing leaves",
+      "ar": "اصفرار الأوراق"
+    },
+    "streaks": {
+      "en": "Streaks or stripes along leaves",
+      "ar": "خطوط طولية على الأوراق"
+    },
+    "wilting": {
+      "en": "Wilting, drying or sudden decline",
+      "ar": "ذبول أو جفاف أو تدهور مفاجئ"
+    },
+    "leaf_curl": {
+      "en": "Curled or distorted leaves",
+      "ar": "التفاف أو تشوه الأوراق"
+    },
+    "insects_visible": {
+      "en": "Insects visible on the plant",
+      "ar": "حشرات ظاهرة على النبات"
+    },
+    "honeydew": {
+      "en": "Sticky residue or black sooty mould",
+      "ar": "مادة لزجة أو عفن أسود"
+    },
+    "webbing_dust": {
+      "en": "Fine webbing with dust on fruit/leaves",
+      "ar": "نسيج عنكبوتي مع غبار على الثمار أو الأوراق"
+    },
+    "leaf_mines": {
+      "en": "Tunnels / mines inside leaves",
+      "ar": "أنفاق داخل الأوراق"
+    },
+    "chewed_leaves": {
+      "en": "Chewed or skeletonised leaves",
+      "ar": "أوراق مأكولة أو مخرّمة"
+    },
+    "trunk_damage": {
+      "en": "Holes or oozing fluid on the trunk",
+      "ar": "ثقوب أو سائل يخرج من الجذع"
+    },
+    "root_rot": {
+      "en": "Rotten or discoloured roots",
+      "ar": "جذور متعفنة أو متغيرة اللون"
+    },
+    "fruit_damage": {
+      "en": "Damaged or scarred fruit",
+      "ar": "ثمار متضررة أو مشوهة"
+    }
   },
   "problems": [
     {
-      "id": "stripe_rust", "type": "disease", "crops": ["cereals"],
-      "name_en": "Stripe (yellow) rust", "name_ar": "الصدأ المخطط (الأصفر)", "scientific_name": "Puccinia striiformis",
+      "id": "stripe_rust",
+      "type": "disease",
+      "crops": [
+        "cereals"
+      ],
+      "name_en": "Stripe (yellow) rust",
+      "name_ar": "الصدأ المخطط (الأصفر)",
+      "scientific_name": "Puccinia striiformis",
       "symptoms_en": "Yellow-orange pustules arranged in lines between the leaf veins; glumes are often infected. Pustules turn dark and shiny as plants mature. Usually appears earlier in the season than other rusts because it develops at lower temperatures.",
       "symptoms_ar": "بثور صفراء برتقالية مرتبة في خطوط بين عروق الورقة، وغالبًا تُصاب القنابع. تصبح البثور داكنة ولامعة مع نضج النبات. يظهر عادةً مبكرًا في الموسم مقارنة بأنواع الصدأ الأخرى لأنه ينمو في درجات حرارة أقل.",
-      "visual_tags": ["rust_pustules", "streaks", "yellowing"],
+      "visual_tags": [
+        "rust_pustules",
+        "streaks",
+        "yellowing"
+      ],
       "conditions_en": "Develops most rapidly at 10–16 °C with intermittent rain and dew (per source).",
       "conditions_ar": "ينتشر أسرع عند ١٠–١٦ °م مع أمطار متقطعة وندى (حسب المصدر).",
-      "inspection_en": ["Look for yellow-orange pustules in stripes between leaf veins", "Check the glumes (ear) for pustules", "Note whether pustules rub off as powder"],
-      "inspection_ar": ["ابحث عن بثور صفراء برتقالية في خطوط بين عروق الورقة", "افحص قنابع السنبلة بحثًا عن البثور", "لاحظ هل تترك البثور مسحوقًا عند لمسها"],
-      "similar": ["leaf_rust"], "reference_images": ["stripe_rust"],
-      "source": "ucipm_stripe_rust", "notes": null
+      "inspection_en": [
+        "Look for yellow-orange pustules in stripes between leaf veins",
+        "Check the glumes (ear) for pustules",
+        "Note whether pustules rub off as powder"
+      ],
+      "inspection_ar": [
+        "ابحث عن بثور صفراء برتقالية في خطوط بين عروق الورقة",
+        "افحص قنابع السنبلة بحثًا عن البثور",
+        "لاحظ هل تترك البثور مسحوقًا عند لمسها"
+      ],
+      "similar": [
+        "leaf_rust"
+      ],
+      "reference_images": [
+        "stripe_rust"
+      ],
+      "source": "ucipm_stripe_rust",
+      "notes": null,
+      "group": "fungal",
+      "group_en": "Possible fungal disease",
+      "group_ar": "مرض فطري محتمل"
     },
     {
-      "id": "leaf_rust", "type": "disease", "crops": ["cereals"],
-      "name_en": "Leaf (brown) rust", "name_ar": "صدأ الأوراق (البني)", "scientific_name": "Puccinia triticina",
+      "id": "leaf_rust",
+      "type": "disease",
+      "crops": [
+        "cereals"
+      ],
+      "name_en": "Leaf (brown) rust",
+      "name_ar": "صدأ الأوراق (البني)",
+      "scientific_name": "Puccinia triticina",
       "symptoms_en": "On wheat, reddish-orange pustules scattered or clustered on the upper leaf surface. Pustules lack the ragged edges of stem rust and turn dark and shiny as plants mature.",
       "symptoms_ar": "على القمح: بثور برتقالية محمرة متفرقة أو متجمعة على السطح العلوي للورقة. حواف البثور غير ممزقة (بخلاف صدأ الساق)، وتصبح داكنة ولامعة مع نضج النبات.",
-      "visual_tags": ["rust_pustules", "leaf_spots"],
-      "conditions_en": null, "conditions_ar": null,
-      "inspection_en": ["Look for reddish-orange pustules on the upper leaf surface", "Check whether pustules are scattered (leaf rust) or in stripes (stripe rust)"],
-      "inspection_ar": ["ابحث عن بثور برتقالية محمرة على السطح العلوي للورقة", "لاحظ هل البثور متفرقة (صدأ الأوراق) أم في خطوط (الصدأ المخطط)"],
-      "similar": ["stripe_rust"], "reference_images": ["leaf_rust"],
-      "source": "ucipm_leaf_rust", "notes": null
+      "visual_tags": [
+        "rust_pustules",
+        "leaf_spots"
+      ],
+      "conditions_en": null,
+      "conditions_ar": null,
+      "inspection_en": [
+        "Look for reddish-orange pustules on the upper leaf surface",
+        "Check whether pustules are scattered (leaf rust) or in stripes (stripe rust)"
+      ],
+      "inspection_ar": [
+        "ابحث عن بثور برتقالية محمرة على السطح العلوي للورقة",
+        "لاحظ هل البثور متفرقة (صدأ الأوراق) أم في خطوط (الصدأ المخطط)"
+      ],
+      "similar": [
+        "stripe_rust"
+      ],
+      "reference_images": [
+        "leaf_rust"
+      ],
+      "source": "ucipm_leaf_rust",
+      "notes": null,
+      "group": "fungal",
+      "group_en": "Possible fungal disease",
+      "group_ar": "مرض فطري محتمل"
     },
     {
-      "id": "russian_wheat_aphid", "type": "pest", "crops": ["cereals"],
-      "name_en": "Russian wheat aphid", "name_ar": "منّ القمح الروسي", "scientific_name": "Diuraphis noxia",
+      "id": "russian_wheat_aphid",
+      "type": "pest",
+      "crops": [
+        "cereals"
+      ],
+      "name_en": "Russian wheat aphid",
+      "name_ar": "منّ القمح الروسي",
+      "scientific_name": "Diuraphis noxia",
       "symptoms_en": "Feeding injects a toxin causing white, longitudinal streaks on leaves (sometimes stems). Heavily infested plants are stunted and may look flattened. Leaves roll like an upright soda straw. The aphid is small, pale green and spindle-shaped with a twin-tailed look under a hand lens.",
       "symptoms_ar": "تحقن الحشرة سمًّا أثناء التغذية فتظهر خطوط بيضاء طولية على الأوراق (وأحيانًا الساق). النباتات المصابة بشدة تتقزم وقد تبدو مسطحة. تلتف الأوراق طوليًا مثل ماصّة الشرب. الحشرة صغيرة خضراء باهتة مغزلية الشكل، ويظهر لها «ذيلان» عند الفحص بالعدسة.",
-      "visual_tags": ["streaks", "leaf_curl", "insects_visible"],
-      "conditions_en": null, "conditions_ar": null,
-      "inspection_en": ["Look for white streaks along leaves", "Check rolled leaves for small pale-green aphids", "Use a hand lens to see the twin-tailed shape"],
-      "inspection_ar": ["ابحث عن خطوط بيضاء على طول الأوراق", "افحص الأوراق الملتفة بحثًا عن منّ أخضر باهت صغير", "استخدم عدسة مكبرة لرؤية شكل «الذيلين»"],
-      "similar": ["bird_cherry_oat_aphid"], "reference_images": ["russian_wheat_aphid"],
-      "source": "ucipm_rwa", "notes": null
+      "visual_tags": [
+        "streaks",
+        "leaf_curl",
+        "insects_visible"
+      ],
+      "conditions_en": null,
+      "conditions_ar": null,
+      "inspection_en": [
+        "Look for white streaks along leaves",
+        "Check rolled leaves for small pale-green aphids",
+        "Use a hand lens to see the twin-tailed shape"
+      ],
+      "inspection_ar": [
+        "ابحث عن خطوط بيضاء على طول الأوراق",
+        "افحص الأوراق الملتفة بحثًا عن منّ أخضر باهت صغير",
+        "استخدم عدسة مكبرة لرؤية شكل «الذيلين»"
+      ],
+      "similar": [
+        "bird_cherry_oat_aphid"
+      ],
+      "reference_images": [
+        "russian_wheat_aphid"
+      ],
+      "source": "ucipm_rwa",
+      "notes": null,
+      "group": "insect",
+      "group_en": "Possible insect pest",
+      "group_ar": "آفة حشرية محتملة"
     },
     {
-      "id": "bird_cherry_oat_aphid", "type": "pest", "crops": ["cereals"],
-      "name_en": "Bird cherry-oat aphid", "name_ar": "منّ الشوفان (منّ الحبوب)", "scientific_name": "Rhopalosiphum padi",
+      "id": "bird_cherry_oat_aphid",
+      "type": "pest",
+      "crops": [
+        "cereals"
+      ],
+      "name_en": "Bird cherry-oat aphid",
+      "name_ar": "منّ الشوفان (منّ الحبوب)",
+      "scientific_name": "Rhopalosiphum padi",
       "symptoms_en": "Heavy populations may cause golden-yellow streaking on leaves (not the white streaks of Russian wheat aphid) and a tight corkscrew curl of the flag leaf. Vector of barley yellow dwarf virus.",
       "symptoms_ar": "الأعداد الكبيرة قد تسبب خطوطًا صفراء ذهبية على الأوراق (وليست بيضاء كما في منّ القمح الروسي) والتفافًا حلزونيًا لورقة العلم. ينقل فيروس التقزم الأصفر للشعير.",
-      "visual_tags": ["streaks", "yellowing", "leaf_curl", "insects_visible"],
-      "conditions_en": null, "conditions_ar": null,
-      "inspection_en": ["Look for golden-yellow streaks on leaves", "Check for corkscrew-curled flag leaves", "Look for olive-green aphids, often with a reddish-orange patch at the rear"],
-      "inspection_ar": ["ابحث عن خطوط صفراء ذهبية على الأوراق", "افحص التفاف ورقة العلم بشكل حلزوني", "ابحث عن منّ زيتوني اللون غالبًا مع بقعة برتقالية محمرة في مؤخرته"],
-      "similar": ["russian_wheat_aphid"], "reference_images": ["bird_cherry_oat_aphid"],
-      "source": "ucipm_bcoa", "notes": null
+      "visual_tags": [
+        "streaks",
+        "yellowing",
+        "leaf_curl",
+        "insects_visible"
+      ],
+      "conditions_en": null,
+      "conditions_ar": null,
+      "inspection_en": [
+        "Look for golden-yellow streaks on leaves",
+        "Check for corkscrew-curled flag leaves",
+        "Look for olive-green aphids, often with a reddish-orange patch at the rear"
+      ],
+      "inspection_ar": [
+        "ابحث عن خطوط صفراء ذهبية على الأوراق",
+        "افحص التفاف ورقة العلم بشكل حلزوني",
+        "ابحث عن منّ زيتوني اللون غالبًا مع بقعة برتقالية محمرة في مؤخرته"
+      ],
+      "similar": [
+        "russian_wheat_aphid"
+      ],
+      "reference_images": [
+        "bird_cherry_oat_aphid"
+      ],
+      "source": "ucipm_bcoa",
+      "notes": null,
+      "group": "insect",
+      "group_en": "Possible insect pest",
+      "group_ar": "آفة حشرية محتملة"
     },
     {
-      "id": "alfalfa_weevil", "type": "pest", "crops": ["fodder"],
-      "name_en": "Alfalfa weevil", "name_ar": "سوسة البرسيم", "scientific_name": "Hypera postica",
+      "id": "alfalfa_weevil",
+      "type": "pest",
+      "crops": [
+        "fodder"
+      ],
+      "name_en": "Alfalfa weevil",
+      "name_ar": "سوسة البرسيم",
+      "scientific_name": "Hypera postica",
       "symptoms_en": "Young larvae feed on terminal buds; larger larvae feed on leaflets, causing skeletonisation and bronzing of the leaves. Damage is most common before the first cutting.",
       "symptoms_ar": "تتغذى اليرقات الصغيرة على البراعم الطرفية، واليرقات الأكبر على الوريقات فتسبب تخريمها وتحول لونها إلى البرونزي. يكثر الضرر قبل الحشّة الأولى.",
-      "visual_tags": ["chewed_leaves", "insects_visible"],
-      "conditions_en": null, "conditions_ar": null,
-      "inspection_en": ["Look for skeletonised, bronzed leaflets", "Check growing tips for larvae", "The source monitors larvae with sweep-net samples"],
-      "inspection_ar": ["ابحث عن وريقات مخرّمة بلون برونزي", "افحص القمم النامية بحثًا عن اليرقات", "المصدر يرصد اليرقات بأخذ عينات بشبكة الكنس"],
-      "similar": [], "reference_images": ["alfalfa_weevil"],
-      "source": "ucipm_alfalfa_weevil", "notes": null
+      "visual_tags": [
+        "chewed_leaves",
+        "insects_visible"
+      ],
+      "conditions_en": null,
+      "conditions_ar": null,
+      "inspection_en": [
+        "Look for skeletonised, bronzed leaflets",
+        "Check growing tips for larvae",
+        "The source monitors larvae with sweep-net samples"
+      ],
+      "inspection_ar": [
+        "ابحث عن وريقات مخرّمة بلون برونزي",
+        "افحص القمم النامية بحثًا عن اليرقات",
+        "المصدر يرصد اليرقات بأخذ عينات بشبكة الكنس"
+      ],
+      "similar": [],
+      "reference_images": [
+        "alfalfa_weevil"
+      ],
+      "source": "ucipm_alfalfa_weevil",
+      "notes": null,
+      "group": "insect",
+      "group_en": "Possible insect pest",
+      "group_ar": "آفة حشرية محتملة"
     },
     {
-      "id": "blue_alfalfa_aphid", "type": "pest", "crops": ["fodder"],
-      "name_en": "Blue alfalfa aphid", "name_ar": "منّ البرسيم الأزرق", "scientific_name": "Acyrthosiphon kondoi",
+      "id": "blue_alfalfa_aphid",
+      "type": "pest",
+      "crops": [
+        "fodder"
+      ],
+      "name_en": "Blue alfalfa aphid",
+      "name_ar": "منّ البرسيم الأزرق",
+      "scientific_name": "Acyrthosiphon kondoi",
       "symptoms_en": "A large blue-green aphid with long legs and antennae; similar to pea aphid but its antennae darken gradually toward the tip. Prefers cooler temperatures. Damage is more severe on short alfalfa than on taller alfalfa.",
       "symptoms_ar": "منّ كبير أزرق مخضر طويل الأرجل وقرون الاستشعار، يشبه منّ البازلاء لكن قرون استشعاره تغمق تدريجيًا نحو الطرف. يفضّل الأجواء الأبرد. الضرر أشد على البرسيم القصير منه على الطويل.",
-      "visual_tags": ["insects_visible", "yellowing"],
-      "conditions_en": "Prefers cooler temperatures (per source).", "conditions_ar": "يفضّل درجات الحرارة الأبرد (حسب المصدر).",
-      "inspection_en": ["Look for large blue-green aphids on stems and leaves", "Check short re-growth after cutting", "Look for lady beetles and other natural enemies"],
-      "inspection_ar": ["ابحث عن منّ كبير أزرق مخضر على السيقان والأوراق", "افحص النمو القصير بعد الحش", "لاحظ وجود الدعسوقة وغيرها من الأعداء الحيوية"],
-      "similar": [], "reference_images": ["blue_alfalfa_aphid"],
-      "source": "ucipm_blue_alfalfa_aphid", "notes": "Reference image is a scientific illustration, not a field photo."
+      "visual_tags": [
+        "insects_visible",
+        "yellowing"
+      ],
+      "conditions_en": "Prefers cooler temperatures (per source).",
+      "conditions_ar": "يفضّل درجات الحرارة الأبرد (حسب المصدر).",
+      "inspection_en": [
+        "Look for large blue-green aphids on stems and leaves",
+        "Check short re-growth after cutting",
+        "Look for lady beetles and other natural enemies"
+      ],
+      "inspection_ar": [
+        "ابحث عن منّ كبير أزرق مخضر على السيقان والأوراق",
+        "افحص النمو القصير بعد الحش",
+        "لاحظ وجود الدعسوقة وغيرها من الأعداء الحيوية"
+      ],
+      "similar": [],
+      "reference_images": [
+        "blue_alfalfa_aphid"
+      ],
+      "source": "ucipm_blue_alfalfa_aphid",
+      "notes": "Reference image is a scientific illustration, not a field photo.",
+      "group": "insect",
+      "group_en": "Possible insect pest",
+      "group_ar": "آفة حشرية محتملة"
     },
     {
-      "id": "alfalfa_phytophthora", "type": "disease", "crops": ["fodder"],
-      "name_en": "Phytophthora root and crown rot", "name_ar": "عفن الجذور والتاج الفيتوفثوري", "scientific_name": "Phytophthora spp.",
+      "id": "alfalfa_phytophthora",
+      "type": "disease",
+      "crops": [
+        "fodder"
+      ],
+      "name_en": "Phytophthora root and crown rot",
+      "name_ar": "عفن الجذور والتاج الفيتوفثوري",
+      "scientific_name": "Phytophthora spp.",
       "symptoms_en": "Plants wilt, often suddenly, and may die. Below ground: tan-to-brown lesions on taproots that later turn black; orange-to-reddish streaks inside the root. Lesions appear where water drainage is impeded.",
       "symptoms_ar": "يذبل النبات غالبًا بشكل مفاجئ وقد يموت. تحت التربة: تقرحات بنية فاتحة إلى بنية على الجذر الوتدي تتحول لاحقًا إلى السواد، وخطوط برتقالية محمرة داخل الجذر. تظهر حيث يكون تصريف الماء ضعيفًا.",
-      "visual_tags": ["wilting", "root_rot"],
-      "conditions_en": "Associated with impeded drainage / waterlogging (per source).", "conditions_ar": "يرتبط بضعف التصريف وتشبع التربة بالماء (حسب المصدر).",
-      "inspection_en": ["Dig up wilting plants and inspect taproots for brown-black lesions", "Check whether the area stays wet or drains poorly"],
-      "inspection_ar": ["اقلع نباتات ذابلة وافحص الجذر الوتدي بحثًا عن تقرحات بنية إلى سوداء", "تحقق هل المنطقة تبقى رطبة أو تصريفها ضعيف"],
-      "similar": [], "reference_images": [],
-      "source": "ucipm_alfalfa_phytophthora", "notes": "Important: wilting from root rot can look like water stress from a satellite — but here the soil is often too wet, not too dry."
+      "visual_tags": [
+        "wilting",
+        "root_rot"
+      ],
+      "conditions_en": "Associated with impeded drainage / waterlogging (per source).",
+      "conditions_ar": "يرتبط بضعف التصريف وتشبع التربة بالماء (حسب المصدر).",
+      "inspection_en": [
+        "Dig up wilting plants and inspect taproots for brown-black lesions",
+        "Check whether the area stays wet or drains poorly"
+      ],
+      "inspection_ar": [
+        "اقلع نباتات ذابلة وافحص الجذر الوتدي بحثًا عن تقرحات بنية إلى سوداء",
+        "تحقق هل المنطقة تبقى رطبة أو تصريفها ضعيف"
+      ],
+      "similar": [],
+      "reference_images": [],
+      "source": "ucipm_alfalfa_phytophthora",
+      "notes": "Important: wilting from root rot can look like water stress from a satellite — but here the soil is often too wet, not too dry.",
+      "group": "oomycete",
+      "group_en": "Possible disease caused by a fungus-like water mould (Phytophthora)",
+      "group_ar": "مرض محتمل يسببه كائن شبيه بالفطريات (الفيتوفثورا)"
     },
     {
-      "id": "red_palm_weevil", "type": "pest", "crops": ["date_palm"],
-      "name_en": "Red palm weevil", "name_ar": "سوسة النخيل الحمراء", "scientific_name": "Rhynchophorus ferrugineus",
+      "id": "red_palm_weevil",
+      "type": "pest",
+      "crops": [
+        "date_palm"
+      ],
+      "name_en": "Red palm weevil",
+      "name_ar": "سوسة النخيل الحمراء",
+      "scientific_name": "Rhynchophorus ferrugineus",
       "symptoms_en": "Infestation is often not apparent until damage is extensive. Signs include brown viscous fluid oozing from the trunk with a fermented/rotting odour, small round holes (e.g. at sites of removed offshoots), chewed fibres between leaf bases, dried leaves in the crown, and dried offshoots.",
       "symptoms_ar": "غالبًا لا تظهر الإصابة إلا بعد ضرر كبير. من العلامات: سائل بني لزج يخرج من الجذع برائحة تخمر أو تعفن، ثقوب دائرية صغيرة (مثل أماكن الفسائل المزالة)، ألياف ممضوغة بين قواعد السعف، جفاف سعف القلب، وجفاف الفسائل.",
-      "visual_tags": ["trunk_damage", "wilting"],
-      "conditions_en": null, "conditions_ar": null,
-      "inspection_en": ["Inspect the trunk base and offshoot sites for holes and brown oozing fluid", "Smell for a fermented odour", "Look for chewed fibres between leaf bases and dried crown leaves"],
-      "inspection_ar": ["افحص قاعدة الجذع وأماكن الفسائل بحثًا عن ثقوب وسائل بني", "تحقق من وجود رائحة تخمر", "ابحث عن ألياف ممضوغة بين قواعد السعف وجفاف سعف القلب"],
-      "similar": [], "reference_images": ["red_palm_weevil"],
-      "source": "fao_rpw_guidelines", "notes": "Trunk damage is not visible from satellites; satellite signals may only appear late (crown drying). Also described in FAO Date palm cultivation, Ch. XII."
+      "visual_tags": [
+        "trunk_damage",
+        "wilting"
+      ],
+      "conditions_en": null,
+      "conditions_ar": null,
+      "inspection_en": [
+        "Inspect the trunk base and offshoot sites for holes and brown oozing fluid",
+        "Smell for a fermented odour",
+        "Look for chewed fibres between leaf bases and dried crown leaves"
+      ],
+      "inspection_ar": [
+        "افحص قاعدة الجذع وأماكن الفسائل بحثًا عن ثقوب وسائل بني",
+        "تحقق من وجود رائحة تخمر",
+        "ابحث عن ألياف ممضوغة بين قواعد السعف وجفاف سعف القلب"
+      ],
+      "similar": [],
+      "reference_images": [
+        "red_palm_weevil"
+      ],
+      "source": "fao_rpw_guidelines",
+      "notes": "Trunk damage is not visible from satellites; satellite signals may only appear late (crown drying). Also described in FAO Date palm cultivation, Ch. XII.",
+      "group": "insect",
+      "group_en": "Possible insect pest",
+      "group_ar": "آفة حشرية محتملة"
     },
     {
-      "id": "dubas_bug", "type": "pest", "crops": ["date_palm"],
-      "name_en": "Dubas bug", "name_ar": "حشرة الدوباس", "scientific_name": "Ommatissus lybicus",
+      "id": "dubas_bug",
+      "type": "pest",
+      "crops": [
+        "date_palm"
+      ],
+      "name_en": "Dubas bug",
+      "name_ar": "حشرة الدوباس",
+      "scientific_name": "Ommatissus lybicus",
       "symptoms_en": "Feeding produces honeydew droplets on the leaflets; this leads to black sooty mould on the foliage and chlorosis (yellowing), reducing photosynthesis and weakening the palm.",
       "symptoms_ar": "تفرز الحشرة أثناء التغذية قطرات ندوة عسلية على الخوص، يتبعها نمو عفن أسود (الهباب) على السعف واصفرار، مما يقلل التمثيل الضوئي ويضعف النخلة.",
-      "visual_tags": ["honeydew", "yellowing", "insects_visible"],
-      "conditions_en": null, "conditions_ar": null,
-      "inspection_en": ["Look for shiny sticky droplets on leaflets", "Check for black sooty mould on fronds", "Look for nymphs on the leaflets"],
-      "inspection_ar": ["ابحث عن قطرات لامعة لزجة على الخوص", "افحص وجود عفن أسود على السعف", "ابحث عن الحوريات على الخوص"],
-      "similar": [], "reference_images": ["dubas_bug"],
-      "source": "pmc_dubas", "notes": null
+      "visual_tags": [
+        "honeydew",
+        "yellowing",
+        "insects_visible"
+      ],
+      "conditions_en": null,
+      "conditions_ar": null,
+      "inspection_en": [
+        "Look for shiny sticky droplets on leaflets",
+        "Check for black sooty mould on fronds",
+        "Look for nymphs on the leaflets"
+      ],
+      "inspection_ar": [
+        "ابحث عن قطرات لامعة لزجة على الخوص",
+        "افحص وجود عفن أسود على السعف",
+        "ابحث عن الحوريات على الخوص"
+      ],
+      "similar": [],
+      "reference_images": [
+        "dubas_bug"
+      ],
+      "source": "pmc_dubas",
+      "notes": null,
+      "group": "insect",
+      "group_en": "Possible insect pest",
+      "group_ar": "آفة حشرية محتملة"
     },
     {
-      "id": "date_mite", "type": "pest", "crops": ["date_palm"],
-      "name_en": "Old World date mite (Bou Faroua)", "name_ar": "عنكبوت الغبار (بوفروة)", "scientific_name": "Oligonychus afrasiaticus",
+      "id": "date_mite",
+      "type": "pest",
+      "crops": [
+        "date_palm"
+      ],
+      "name_en": "Old World date mite (Bou Faroua)",
+      "name_ar": "عنكبوت الغبار (بوفروة)",
+      "scientific_name": "Oligonychus afrasiaticus",
       "symptoms_en": "After fruit set the mites feed on the fruits and cover them with webbing that retains sand particles; affected mature fruits lose commercial value.",
       "symptoms_ar": "بعد عقد الثمار يتغذى الحلم على الثمار ويغطيها بنسيج يحتجز حبيبات الرمل والغبار، وتفقد الثمار المصابة قيمتها التجارية.",
-      "visual_tags": ["webbing_dust", "fruit_damage"],
-      "conditions_en": null, "conditions_ar": null,
-      "inspection_en": ["Check fruit bunches for fine webbing holding dust or sand", "Look for scarred or discoloured fruits"],
-      "inspection_ar": ["افحص العذوق بحثًا عن نسيج دقيق يحتجز الغبار أو الرمل", "ابحث عن ثمار متقشرة أو متغيرة اللون"],
-      "similar": [], "reference_images": [],
-      "source": "fao_date_ch12", "notes": null
+      "visual_tags": [
+        "webbing_dust",
+        "fruit_damage"
+      ],
+      "conditions_en": null,
+      "conditions_ar": null,
+      "inspection_en": [
+        "Check fruit bunches for fine webbing holding dust or sand",
+        "Look for scarred or discoloured fruits"
+      ],
+      "inspection_ar": [
+        "افحص العذوق بحثًا عن نسيج دقيق يحتجز الغبار أو الرمل",
+        "ابحث عن ثمار متقشرة أو متغيرة اللون"
+      ],
+      "similar": [],
+      "reference_images": [],
+      "source": "fao_date_ch12",
+      "notes": null,
+      "group": "mite",
+      "group_en": "Possible mite pest",
+      "group_ar": "آفة محتملة من الحلم (العناكب الدقيقة)"
     },
     {
-      "id": "parlatoria_scale", "type": "pest", "crops": ["date_palm"],
-      "name_en": "Parlatoria date scale", "name_ar": "الحشرة القشرية البيضاء (بارلاتوريا)", "scientific_name": "Parlatoria blanchardi",
+      "id": "parlatoria_scale",
+      "type": "pest",
+      "crops": [
+        "date_palm"
+      ],
+      "name_en": "Parlatoria date scale",
+      "name_ar": "الحشرة القشرية البيضاء (بارلاتوريا)",
+      "scientific_name": "Parlatoria blanchardi",
       "symptoms_en": "Nymphs and adults suck sap from leaflets, midribs and dates. Heavy infestation turns leaflets yellow and can cause premature frond death.",
       "symptoms_ar": "تمتص الحوريات والحشرات الكاملة العصارة من الخوص والجريد والثمار. الإصابة الشديدة تسبب اصفرار الخوص وقد تؤدي إلى موت السعف مبكرًا.",
-      "visual_tags": ["yellowing", "insects_visible", "fruit_damage"],
-      "conditions_en": null, "conditions_ar": null,
-      "inspection_en": ["Look for small scale insects on leaflets, midribs and fruits", "Check for yellowing leaflets"],
-      "inspection_ar": ["ابحث عن حشرات قشرية صغيرة على الخوص والجريد والثمار", "لاحظ اصفرار الخوص"],
-      "similar": [], "reference_images": [],
-      "source": "fao_date_ch12", "notes": null
+      "visual_tags": [
+        "yellowing",
+        "insects_visible",
+        "fruit_damage"
+      ],
+      "conditions_en": null,
+      "conditions_ar": null,
+      "inspection_en": [
+        "Look for small scale insects on leaflets, midribs and fruits",
+        "Check for yellowing leaflets"
+      ],
+      "inspection_ar": [
+        "ابحث عن حشرات قشرية صغيرة على الخوص والجريد والثمار",
+        "لاحظ اصفرار الخوص"
+      ],
+      "similar": [],
+      "reference_images": [],
+      "source": "fao_date_ch12",
+      "notes": null,
+      "group": "insect",
+      "group_en": "Possible insect pest",
+      "group_ar": "آفة حشرية محتملة"
     },
     {
-      "id": "graphiola_leaf_spot", "type": "disease", "crops": ["date_palm"],
-      "name_en": "Graphiola leaf spot (false smut)", "name_ar": "تبقع الأوراق الجرافيولي (التفحم الكاذب)", "scientific_name": "Graphiola phoenicis",
+      "id": "graphiola_leaf_spot",
+      "type": "disease",
+      "crops": [
+        "date_palm"
+      ],
+      "name_en": "Graphiola leaf spot (false smut)",
+      "name_ar": "تبقع الأوراق الجرافيولي (التفحم الكاذب)",
+      "scientific_name": "Graphiola phoenicis",
       "symptoms_en": "Small spots on both sides of the leaflets, on the rachis and leaf base; numerous small yellow-brown to black fruiting bodies (sori) 1–3 mm across. Infected leaves die prematurely.",
       "symptoms_ar": "بقع صغيرة على وجهي الخوص وعلى الجريد وقاعدة السعفة، مع أجسام ثمرية صغيرة كثيرة صفراء بنية إلى سوداء بقطر ١–٣ مم. تموت الأوراق المصابة مبكرًا.",
-      "visual_tags": ["leaf_spots", "yellowing"],
-      "conditions_en": null, "conditions_ar": null,
-      "inspection_en": ["Look for small yellow-brown to black raised spots (1–3 mm) on both sides of leaflets"],
-      "inspection_ar": ["ابحث عن بقع بارزة صغيرة (١–٣ مم) صفراء بنية إلى سوداء على وجهي الخوص"],
-      "similar": [], "reference_images": ["graphiola_leaf_spot"],
-      "source": "fao_date_ch12", "notes": null
+      "visual_tags": [
+        "leaf_spots",
+        "yellowing"
+      ],
+      "conditions_en": null,
+      "conditions_ar": null,
+      "inspection_en": [
+        "Look for small yellow-brown to black raised spots (1–3 mm) on both sides of leaflets"
+      ],
+      "inspection_ar": [
+        "ابحث عن بقع بارزة صغيرة (١–٣ مم) صفراء بنية إلى سوداء على وجهي الخوص"
+      ],
+      "similar": [],
+      "reference_images": [
+        "graphiola_leaf_spot"
+      ],
+      "source": "fao_date_ch12",
+      "notes": null,
+      "group": "fungal",
+      "group_en": "Possible fungal disease",
+      "group_ar": "مرض فطري محتمل"
     },
     {
-      "id": "citrus_leafminer", "type": "pest", "crops": ["citrus"],
-      "name_en": "Citrus leafminer", "name_ar": "صانعة أنفاق أوراق الحمضيات", "scientific_name": "Phyllocnistis citrella",
+      "id": "citrus_leafminer",
+      "type": "pest",
+      "crops": [
+        "citrus"
+      ],
+      "name_en": "Citrus leafminer",
+      "name_ar": "صانعة أنفاق أوراق الحمضيات",
+      "scientific_name": "Phyllocnistis citrella",
       "symptoms_en": "Larvae create shallow tunnels (mines) in young leaves, causing them to curl and look distorted. Mature trees usually tolerate the damage; nurseries and young plantings are most affected.",
       "symptoms_ar": "تحفر اليرقات أنفاقًا سطحية داخل الأوراق الحديثة فتلتف وتتشوه. الأشجار البالغة تتحمل الضرر عادةً، والأكثر تضررًا هي المشاتل والأشجار الصغيرة.",
-      "visual_tags": ["leaf_mines", "leaf_curl"],
-      "conditions_en": null, "conditions_ar": null,
-      "inspection_en": ["Check young flush leaves for silvery winding tunnels", "Note curled, distorted young leaves", "Check whether trees are young (under ~4–5 years)"],
-      "inspection_ar": ["افحص الأوراق الحديثة بحثًا عن أنفاق فضية متعرجة", "لاحظ التفاف وتشوه الأوراق الحديثة", "تحقق هل الأشجار صغيرة العمر"],
-      "similar": [], "reference_images": ["citrus_leafminer"],
-      "source": "ucipm_citrus_leafminer", "notes": null
+      "visual_tags": [
+        "leaf_mines",
+        "leaf_curl"
+      ],
+      "conditions_en": null,
+      "conditions_ar": null,
+      "inspection_en": [
+        "Check young flush leaves for silvery winding tunnels",
+        "Note curled, distorted young leaves",
+        "Check whether trees are young (under ~4–5 years)"
+      ],
+      "inspection_ar": [
+        "افحص الأوراق الحديثة بحثًا عن أنفاق فضية متعرجة",
+        "لاحظ التفاف وتشوه الأوراق الحديثة",
+        "تحقق هل الأشجار صغيرة العمر"
+      ],
+      "similar": [],
+      "reference_images": [
+        "citrus_leafminer"
+      ],
+      "source": "ucipm_citrus_leafminer",
+      "notes": null,
+      "group": "insect",
+      "group_en": "Possible insect pest",
+      "group_ar": "آفة حشرية محتملة"
     },
     {
-      "id": "citrus_phytophthora", "type": "disease", "crops": ["citrus"],
-      "name_en": "Phytophthora root rot", "name_ar": "عفن الجذور الفيتوفثوري", "scientific_name": "Phytophthora spp.",
+      "id": "citrus_phytophthora",
+      "type": "disease",
+      "crops": [
+        "citrus"
+      ],
+      "name_en": "Phytophthora root rot",
+      "name_ar": "عفن الجذور الفيتوفثوري",
+      "scientific_name": "Phytophthora spp.",
       "symptoms_en": "Slow decline of the tree, especially in new plantings. Leaves turn light green or yellow and may drop. Feeder roots are destroyed: the root cortex turns soft and separates. Symptoms are often difficult to distinguish from other causes such as nematodes or salinity.",
       "symptoms_ar": "تدهور بطيء للشجرة، خاصة في الأشجار المزروعة حديثًا. تصبح الأوراق خضراء فاتحة أو صفراء وقد تتساقط. تتلف الجذور الماصة: تلين قشرة الجذر وتنفصل. يصعب غالبًا تمييز الأعراض عن أسباب أخرى مثل النيماتودا أو الملوحة.",
-      "visual_tags": ["yellowing", "wilting", "root_rot"],
-      "conditions_en": "Management in the source stresses adequate drainage and avoiding over-irrigation.", "conditions_ar": "يؤكد المصدر على أهمية التصريف الجيد وتجنب الإفراط في الري.",
-      "inspection_en": ["Check feeder roots: is the outer layer soft and slipping off?", "Check whether the soil stays wet / is over-irrigated", "Look for gum oozing at the trunk base"],
-      "inspection_ar": ["افحص الجذور الماصة: هل الطبقة الخارجية لينة وتنفصل؟", "تحقق هل التربة تبقى رطبة أو تُروى زيادة", "ابحث عن صمغ يخرج عند قاعدة الجذع"],
-      "similar": [], "reference_images": ["citrus_phytophthora"],
-      "source": "ucipm_citrus_phytophthora", "notes": "Over-irrigation can cause this; adding water would make it worse. Gumming at the trunk base is shown in the reference image (foot rot)."
+      "visual_tags": [
+        "yellowing",
+        "wilting",
+        "root_rot"
+      ],
+      "conditions_en": "Management in the source stresses adequate drainage and avoiding over-irrigation.",
+      "conditions_ar": "يؤكد المصدر على أهمية التصريف الجيد وتجنب الإفراط في الري.",
+      "inspection_en": [
+        "Check feeder roots: is the outer layer soft and slipping off?",
+        "Check whether the soil stays wet / is over-irrigated",
+        "Look for gum oozing at the trunk base"
+      ],
+      "inspection_ar": [
+        "افحص الجذور الماصة: هل الطبقة الخارجية لينة وتنفصل؟",
+        "تحقق هل التربة تبقى رطبة أو تُروى زيادة",
+        "ابحث عن صمغ يخرج عند قاعدة الجذع"
+      ],
+      "similar": [],
+      "reference_images": [
+        "citrus_phytophthora"
+      ],
+      "source": "ucipm_citrus_phytophthora",
+      "notes": "Over-irrigation can cause this; adding water would make it worse. Gumming at the trunk base is shown in the reference image (foot rot).",
+      "group": "oomycete",
+      "group_en": "Possible disease caused by a fungus-like water mould (Phytophthora)",
+      "group_ar": "مرض محتمل يسببه كائن شبيه بالفطريات (الفيتوفثورا)"
     },
     {
-      "id": "late_blight", "type": "disease", "crops": ["vegetables"],
-      "name_en": "Late blight (potato, tomato)", "name_ar": "اللفحة المتأخرة (البطاطس، الطماطم)", "scientific_name": "Phytophthora infestans",
+      "id": "late_blight",
+      "type": "disease",
+      "crops": [
+        "vegetables"
+      ],
+      "name_en": "Late blight (potato, tomato)",
+      "name_ar": "اللفحة المتأخرة (البطاطس، الطماطم)",
+      "scientific_name": "Phytophthora infestans",
       "symptoms_en": "Small pale to dark green water-soaked spots, irregular in shape with a yellowish halo; they expand rapidly and become brown to purplish black. In humid conditions white growth appears at the lesion edge, mainly on the underside of leaves. Stems show brown-black lesions; tubers develop a firm brown decay.",
       "symptoms_ar": "بقع صغيرة مائية المظهر خضراء باهتة إلى داكنة غير منتظمة الشكل محاطة بهالة صفراء، تتسع بسرعة وتصبح بنية إلى سوداء أرجوانية. في الأجواء الرطبة يظهر نمو أبيض عند حافة البقعة خاصة على السطح السفلي للورقة. تظهر على السيقان تقرحات بنية سوداء، وعلى الدرنات تعفن بني متماسك.",
-      "visual_tags": ["leaf_spots", "yellowing", "wilting"],
-      "conditions_en": "Favoured by cool, humid / wet conditions (per source).", "conditions_ar": "تُفضّلها الأجواء الباردة الرطبة (حسب المصدر).",
-      "inspection_en": ["Look for water-soaked spots with a yellow halo", "Check leaf undersides for white growth at lesion edges", "Check stems for brown-black lesions"],
-      "inspection_ar": ["ابحث عن بقع مائية المظهر بهالة صفراء", "افحص السطح السفلي للأوراق بحثًا عن نمو أبيض عند حواف البقع", "افحص السيقان بحثًا عن تقرحات بنية سوداء"],
-      "similar": ["early_blight"], "reference_images": ["late_blight"],
-      "source": "ucipm_potato_late_blight", "notes": null
+      "visual_tags": [
+        "leaf_spots",
+        "yellowing",
+        "wilting"
+      ],
+      "conditions_en": "Favoured by cool, humid / wet conditions (per source).",
+      "conditions_ar": "تُفضّلها الأجواء الباردة الرطبة (حسب المصدر).",
+      "inspection_en": [
+        "Look for water-soaked spots with a yellow halo",
+        "Check leaf undersides for white growth at lesion edges",
+        "Check stems for brown-black lesions"
+      ],
+      "inspection_ar": [
+        "ابحث عن بقع مائية المظهر بهالة صفراء",
+        "افحص السطح السفلي للأوراق بحثًا عن نمو أبيض عند حواف البقع",
+        "افحص السيقان بحثًا عن تقرحات بنية سوداء"
+      ],
+      "similar": [
+        "early_blight"
+      ],
+      "reference_images": [
+        "late_blight"
+      ],
+      "source": "ucipm_potato_late_blight",
+      "notes": null,
+      "group": "oomycete",
+      "group_en": "Possible disease caused by a fungus-like water mould (Phytophthora)",
+      "group_ar": "مرض محتمل يسببه كائن شبيه بالفطريات (الفيتوفثورا)"
     },
     {
-      "id": "early_blight", "type": "disease", "crops": ["vegetables"],
-      "name_en": "Early blight (potato)", "name_ar": "اللفحة المبكرة (البطاطس)", "scientific_name": "Alternaria solani",
+      "id": "early_blight",
+      "type": "disease",
+      "crops": [
+        "vegetables"
+      ],
+      "name_en": "Early blight (potato)",
+      "name_ar": "اللفحة المبكرة (البطاطس)",
+      "scientific_name": "Alternaria solani",
       "symptoms_en": "Mainly a disease of stressed or senescing plants; symptoms appear first on the oldest foliage. Circular to angular dark brown lesions 3–4 mm across, often with concentric rings (target-board look). Severely infected leaves turn yellow and drop; tubers show a brown, corky dry rot.",
       "symptoms_ar": "مرض يصيب غالبًا النباتات المجهدة أو الشائخة، وتظهر الأعراض أولًا على الأوراق الأقدم. بقع بنية داكنة دائرية إلى زاوية بقطر ٣–٤ مم غالبًا بحلقات متداخلة (شكل الهدف). الأوراق شديدة الإصابة تصفر وتسقط، وتظهر على الدرنات تعفن جاف بني فليني.",
-      "visual_tags": ["leaf_spots", "yellowing"],
-      "conditions_en": null, "conditions_ar": null,
-      "inspection_en": ["Check the oldest (lowest) leaves first", "Look for brown spots with concentric rings"],
-      "inspection_ar": ["افحص الأوراق الأقدم (السفلية) أولًا", "ابحث عن بقع بنية بحلقات متداخلة"],
-      "similar": ["late_blight"], "reference_images": [],
-      "source": "ucipm_potato_early_blight", "notes": null
+      "visual_tags": [
+        "leaf_spots",
+        "yellowing"
+      ],
+      "conditions_en": null,
+      "conditions_ar": null,
+      "inspection_en": [
+        "Check the oldest (lowest) leaves first",
+        "Look for brown spots with concentric rings"
+      ],
+      "inspection_ar": [
+        "افحص الأوراق الأقدم (السفلية) أولًا",
+        "ابحث عن بقع بنية بحلقات متداخلة"
+      ],
+      "similar": [
+        "late_blight"
+      ],
+      "reference_images": [],
+      "source": "ucipm_potato_early_blight",
+      "notes": null,
+      "group": "fungal",
+      "group_en": "Possible fungal disease",
+      "group_ar": "مرض فطري محتمل"
     },
     {
-      "id": "whiteflies", "type": "pest", "crops": ["vegetables"],
-      "name_en": "Whiteflies", "name_ar": "الذبابة البيضاء", "scientific_name": "Bemisia tabaci / Trialeurodes vaporariorum",
+      "id": "whiteflies",
+      "type": "pest",
+      "crops": [
+        "vegetables"
+      ],
+      "name_en": "Whiteflies",
+      "name_ar": "الذبابة البيضاء",
+      "scientific_name": "Bemisia tabaci / Trialeurodes vaporariorum",
       "symptoms_en": "Feeding makes leaves yellow and curl; honeydew makes leaves shiny or black (sooty mould). Sweetpotato whitefly can cause uneven fruit ripening. Whiteflies can transmit viruses such as tomato yellow leaf curl. Adults are tiny (about 1.5 mm) yellowish insects with white wings.",
       "symptoms_ar": "تسبب التغذية اصفرار الأوراق والتفافها، والندوة العسلية تجعل الأوراق لامعة أو سوداء (عفن الهباب). ذبابة البطاطا الحلوة البيضاء قد تسبب نضجًا غير متجانس للثمار. تنقل الذبابة البيضاء فيروسات مثل تجعد واصفرار أوراق الطماطم. الحشرة الكاملة صغيرة جدًا (نحو ١٫٥ مم) صفراء بأجنحة بيضاء.",
-      "visual_tags": ["yellowing", "leaf_curl", "honeydew", "insects_visible"],
-      "conditions_en": null, "conditions_ar": null,
-      "inspection_en": ["Turn leaves over and look for tiny white flying insects and nymphs (hand lens)", "Check for sticky or black leaves", "Note yellow, curled leaves"],
-      "inspection_ar": ["اقلب الأوراق وابحث عن حشرات بيضاء صغيرة طائرة وحوريات (بعدسة مكبرة)", "تحقق من وجود أوراق لزجة أو سوداء", "لاحظ الأوراق الصفراء الملتفة"],
-      "similar": [], "reference_images": ["whiteflies"],
-      "source": "ucipm_tomato_whiteflies", "notes": null
+      "visual_tags": [
+        "yellowing",
+        "leaf_curl",
+        "honeydew",
+        "insects_visible"
+      ],
+      "conditions_en": null,
+      "conditions_ar": null,
+      "inspection_en": [
+        "Turn leaves over and look for tiny white flying insects and nymphs (hand lens)",
+        "Check for sticky or black leaves",
+        "Note yellow, curled leaves"
+      ],
+      "inspection_ar": [
+        "اقلب الأوراق وابحث عن حشرات بيضاء صغيرة طائرة وحوريات (بعدسة مكبرة)",
+        "تحقق من وجود أوراق لزجة أو سوداء",
+        "لاحظ الأوراق الصفراء الملتفة"
+      ],
+      "similar": [],
+      "reference_images": [
+        "whiteflies"
+      ],
+      "source": "ucipm_tomato_whiteflies",
+      "notes": null,
+      "group": "insect",
+      "group_en": "Possible insect pest",
+      "group_ar": "آفة حشرية محتملة"
     },
     {
-      "id": "tuta_absoluta", "type": "pest", "crops": ["vegetables"],
-      "name_en": "Tomato leafminer (Tuta absoluta)", "name_ar": "حافرة أوراق الطماطم (توتا أبسولوتا)", "scientific_name": "Phthorimaea (Tuta) absoluta",
+      "id": "tuta_absoluta",
+      "type": "pest",
+      "crops": [
+        "vegetables"
+      ],
+      "name_en": "Tomato leafminer (Tuta absoluta)",
+      "name_ar": "حافرة أوراق الطماطم (توتا أبسولوتا)",
+      "scientific_name": "Phthorimaea (Tuta) absoluta",
       "symptoms_en": "Larvae tunnel inside the leaf between the upper and lower surfaces, forming galleries and blotch-like mines; later they fold leaves or join leaves together as shelters. Tomato is a preferred host; leaves, stems, flowers and fruits can be attacked.",
       "symptoms_ar": "تحفر اليرقات داخل الورقة بين السطحين العلوي والسفلي مكوّنة أنفاقًا وبقعًا منخورة، ثم تطوي الأوراق أو تلصقها ببعضها كمأوى. الطماطم عائل مفضل، ويمكن أن تُصاب الأوراق والسيقان والأزهار والثمار.",
-      "visual_tags": ["leaf_mines", "fruit_damage", "leaf_curl"],
-      "conditions_en": null, "conditions_ar": null,
-      "inspection_en": ["Hold leaves against the light to see mines and larvae inside", "Check folded or joined leaves", "Check fruits for holes"],
-      "inspection_ar": ["ارفع الأوراق مقابل الضوء لرؤية الأنفاق واليرقات بداخلها", "افحص الأوراق المطوية أو الملتصقة", "افحص الثمار بحثًا عن ثقوب"],
-      "similar": [], "reference_images": ["tuta_absoluta"],
-      "source": "pmc_tuta_absoluta", "notes": "Taxonomic reference: EPPO Global Database (eppo_tuta_absoluta)."
+      "visual_tags": [
+        "leaf_mines",
+        "fruit_damage",
+        "leaf_curl"
+      ],
+      "conditions_en": null,
+      "conditions_ar": null,
+      "inspection_en": [
+        "Hold leaves against the light to see mines and larvae inside",
+        "Check folded or joined leaves",
+        "Check fruits for holes"
+      ],
+      "inspection_ar": [
+        "ارفع الأوراق مقابل الضوء لرؤية الأنفاق واليرقات بداخلها",
+        "افحص الأوراق المطوية أو الملتصقة",
+        "افحص الثمار بحثًا عن ثقوب"
+      ],
+      "similar": [],
+      "reference_images": [
+        "tuta_absoluta"
+      ],
+      "source": "pmc_tuta_absoluta",
+      "notes": "Taxonomic reference: EPPO Global Database (eppo_tuta_absoluta).",
+      "group": "insect",
+      "group_en": "Possible insect pest",
+      "group_ar": "آفة حشرية محتملة"
     }
   ]
 }

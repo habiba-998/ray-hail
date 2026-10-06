@@ -38,6 +38,7 @@ def build_map(
     label_px: int = 11,
     tooltip_aliases: tuple[str, str, str] = ("Zone", "Status", "Stress score %"),
     class_labels: dict[str, str] | None = None,
+    basemap_attr: str = "Basemap: Esri World Imagery",
 ) -> folium.Map:
     """Folium map of the AOI with coloured zones.
 
@@ -47,7 +48,7 @@ def build_map(
     """
     min_lon, min_lat, max_lon, max_lat = bounds
     m = folium.Map(location=[(min_lat + max_lat) / 2, (min_lon + max_lon) / 2], zoom_start=14, tiles=None, control_scale=True)
-    folium.TileLayer(tiles=ESRI_URL, attr="Basemap: Esri World Imagery", name="Basemap", max_zoom=19).add_to(m)
+    folium.TileLayer(tiles=ESRI_URL, attr=basemap_attr, name="Basemap", max_zoom=19).add_to(m)
     if tile_url:
         folium.TileLayer(tiles=tile_url, attr=attribution, name=layer_name, overlay=True, max_zoom=19).add_to(m)
     elif image_rgba is not None:

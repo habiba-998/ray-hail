@@ -1,13 +1,16 @@
-"""Headless UI test of every mode / page / language (Streamlit AppTest).
+"""Headless test of the farmer-only interface (Streamlit AppTest).
 
 Run from the project root:
-    python -m tests.ui_test                 # demo mode + Earth Engine failure path
-    python -m tests.ui_test YOUR_PROJECT_ID # additionally Earth Engine mode with real data
+    python -m tests.ui_test                 # local demo data + failure path
+    python -m tests.ui_test YOUR_PROJECT_ID # additionally real Earth Engine data
 
-It checks that nothing raises, that the right data badge is shown, and that the farmer
-views show exactly the classes produced by the unchanged pipeline (no new classification).
+Checks: every page renders without exceptions or error boxes; no technical term and no colloquial Arabic is visible;
+there is no technical mode; Earth Engine errors are never shown to the farmer; the plant-check rules
+(first suspicion / yellowing ambiguity) behave as specified; observations and field results are saved and listed
+in the farm record.
 """
 import os
+import re
 import sys
 import tempfile
 
@@ -19,6 +22,11 @@ from src.demo_data import DemoFarm
 from src.preprocessing import make_zone_grid
 
 FAIL = []
+PAGES = ["home", "map", "zones", "plant", "water", "log", "about"]
+TECH_TERMS = ["Google Earth Engine", "Earth Engine", "Sentinel", "Landsat", "ERA5", "NDVI", "NDRE", "NDMI", "LST",
+              "Isolation Forest", "Random Forest", "Demo mode", "DEMO", "Cloud project", "Latitude", "Longitude",
+              "AI & Method", "Fusion", "IoT", "Permission", "Technical", "earthengine", "Overview", "Analytics"]
+COLLOQUIAL = ["وش", "وين", "تشوف", "اللي", "يبي", "ليش", "ابي", "زين", "مب"]  # matched as whole words
 
 
 def check(cond: bool, msg: str) -> None:
@@ -27,8 +35,13 @@ def check(cond: bool, msg: str) -> None:
         FAIL.append(msg)
 
 
-def text(at) -> str:
-    return " ".join(m.value for m in at.markdown) + " " + " ".join(c.value for c in at.caption)
+def visible_text(at) -> str:
+    parts = [m.value for m in at.markdown if "<style" not in m.value]
+    parts += [c.value for c in at.caption] + [b.label for b in at.button] + [e.label for e in at.expander]
+    parts += [w.label for w in at.radio] + [w.label for w in at.selectbox] + [w.label for w in at.checkbox]
+    parts += [str(o) for w in at.radio for o in w.options] + [str(o) for w in at.selectbox for o in w.options]
+    parts += [x.value for x in at.info] + [x.value for x in at.warning] + [x.value for x in at.success] + [x.value for x in at.error]
+    return " ".join(parts)
 
 
 def no_errors(at, where: str) -> None:
@@ -36,123 +49,110 @@ def no_errors(at, where: str) -> None:
     check(not at.error, f"{where}: no error boxes {[e.value for e in at.error][:1]}")
 
 
-DEMO_SRC, EE_SRC = "Demo mode (simulated data)", "Google Earth Engine (real satellite data)"
-
-
-def new_app(source: str, project: str | None = None, lang: str = "ar") -> AppTest:
-    """Start the app with an explicit data source, language (and project ID typed into the sidebar field)."""
+def new_app(source: str, project: str | None = None) -> AppTest:
     at = AppTest.from_file("../app.py", default_timeout=600)
     at.session_state["source"] = source
-    at.session_state["lang"] = lang
+    if project is not None:
+        at.session_state["_ee_project_override"] = project
     at.run()
-    if source == EE_SRC and project is not None:
-        at.text_input[0].set_value(project).run()
     return at
 
 
-def run_pages(make_app, where: str):
-    # one fresh session per language (AppTest re-sends stale language-specific widget states otherwise)
-    for lang in ("en", "ar"):
-        at = make_app(lang)
-        for page in ("home", "map", "zones", "plant", "water", "about"):
-            at.session_state["fpage"] = page
-            at.run()
-            no_errors(at, f"{where} farmer/{page} lang={lang}")
-        at.session_state["fpage"] = "home"
-        at.run()
-        marker = "What needs my attention today?" if lang == "en" else "وش يحتاج انتباهي اليوم؟"
-        check(marker in text(at), f"{where}: farmer home in {lang}")
-    at = make_app("ar")
-    # crop selection drives the zone page's crop-specific problems
-    at.session_state["crop"] = "date_palm"
-    at.session_state["fpage"] = "zones"
-    at.run()
-    no_errors(at, f"{where} zones with crop")
-    check(any("سوسة النخيل الحمراء" in e.label for e in at.expander), f"{where}: crop-specific problems listed (date palm)")
-    check("وش ممكن يكون السبب؟" in text(at), f"{where}: possible causes shown on zone page")
-    # plant check flow: symptoms → analyse → save → field validation
-    at = make_app("en")
-    at.session_state["fpage"] = "plant"
-    at.run()
-    at.checkbox(key="sym_wilting").check()
-    at.radio(key="soil").set_value("dry")
-    at.run()
-    at.button(key="b_analyze").click().run()
-    no_errors(at, f"{where} plant analyse")
-    res = at.session_state["plant_result"]
-    check(res["causes"][0]["cause"] == "water", f"{where}: wilting + dry soil ranks water first ({res['causes'][0]['cause']})")
-    check("What to check now" in text(at), f"{where}: inspection checklist shown")
-    at.button(key="b_save_obs").click().run()
-    no_errors(at, f"{where} save observation")
-    check(bool(at.session_state["plant_result"]["saved_id"]), f"{where}: observation saved")
-    sub = [b for b in at.button if "Save field result" in str(b.label)]
-    check(bool(sub), f"{where}: field-validation form shown")
-    if sub:
-        sub[0].click().run()
-        no_errors(at, f"{where} save validation")
-        check(any("Field result saved" in s.value for s in at.success), f"{where}: field validation saved")
-    # technical mode
-    at.session_state["mode"] = "tech"
-    at.run()
-    no_errors(at, f"{where} technical")
-    labels = [tb.label for tb in at.tabs]
-    check(labels[:9] == ["📊 Overview", "🛰️ Satellite Map", "📈 Analytics", "💧 Water Intelligence", "🧠 AI & Method",
-                         "🔗 Sources & Fusion", "🌱 Crops & Knowledge", "🗄️ Data & IoT", "⚠️ Limitations"],
-          f"{where}: technical tabs present")
-    check(any("NOT TRAINED" in m.value for m in at.markdown), f"{where}: Random Forest NOT TRAINED shown")
-    words = text(at).lower()
-    check(not any(w in words for w in ("balanced accuracy", "precision:", "recall:", "f1:")), f"{where}: no supervised metrics")
-    at.session_state["mode"] = "farmer"
-    at.run()
-    no_errors(at, f"{where} back to farmer")
-
-
-def expected_demo_classes() -> dict:
+def expected_demo_top() -> str:
     p = AOI_PRESETS[DEFAULT_PRESET]
     aoi = AOI(p["lat"], p["lon"], p["half_km"])
     farm = DemoFarm(tuple(round(b, 6) for b in aoi.bounds))
     d = farm.dates[-1]
-    s, _ = analysis.score_zones(farm.zone_stats(make_zone_grid(aoi, 4, 4), d, analysis.pick_previous_date(farm.dates, d)),
-                                Thresholds())
-    return dict(zip(s.zone_id, s.cls))
+    s, _ = analysis.score_zones(farm.zone_stats(make_zone_grid(aoi, 4, 4), d, analysis.pick_previous_date(farm.dates, d)), Thresholds())
+    return str(s.sort_values("score", ascending=False).iloc[0].zone_id)
+
+
+def run_all(at, where: str) -> None:
+    check("mode" not in at.session_state and not at.tabs, f"{where}: no technical mode / tabs")
+    for page in PAGES:
+        at.session_state["fpage"] = page
+        at.run()
+        no_errors(at, f"{where} page {page}")
+        txt = visible_text(at)
+        tech = [w for w in TECH_TERMS if w in txt]
+        check(not tech, f"{where} page {page}: no technical terms visible {tech}")
+        words = set(re.findall(r"[؀-ۿ]+", txt))
+        coll = [w for w in COLLOQUIAL if w in words] + (["فيه منطقة"] if "فيه منطقة" in txt else [])
+        check(not coll, f"{where} page {page}: no colloquial Arabic {coll}")
+    at.session_state["fpage"] = "home"
+    at.run()
+    check("ما الذي يحتاج إلى انتباه في مزرعتي؟" in visible_text(at), f"{where}: home question in Standard Arabic")
+    check("حالة مزرعتك اليوم" in visible_text(at), f"{where}: farm status summary shown")
+    at.button(key="b_prio").click().run()
+    check(at.session_state["fpage"] == "zones", f"{where}: 'go to highest priority' opens the zone page")
+    txt = visible_text(at)
+    for phrase in ("ما السبب المحتمل؟", "هذه النتائج مؤشرات أولية وليست تشخيصًا نهائيًا.", "ما الذي ينبغي فحصه؟",
+                   "لا تغيّر كمية الري قبل التحقق من السبب ميدانيًا."):
+        check(phrase in txt, f"{where}: zone page shows «{phrase}»")
+    at.session_state["crop"] = "date_palm"
+    at.run()
+    check(any("سوسة النخيل الحمراء" in e.label for e in at.expander), f"{where}: crop-specific problems listed (date palm)")
+    # plant check: distinctive symptoms → specific suspicion
+    at.session_state["crop"] = "cereals"
+    at.session_state["fpage"] = "plant"
+    at.run()
+    at.checkbox(key="sym_rust_pustules").check()
+    at.checkbox(key="sym_streaks").check()
+    at.run()
+    at.button(key="b_analyze").click().run()
+    no_errors(at, f"{where} plant analyse (rust)")
+    txt = visible_text(at)
+    check("الاشتباه الأول" in txt and "قد يتوافق مع" in txt and "الصدأ المخطط" in txt, f"{where}: first suspicion 'may match' stripe rust")
+    check("هذه نتيجة أولية وليست تشخيصًا نهائيًا" in txt, f"{where}: preliminary-result disclaimer shown")
+    check("تم تشخيص" not in txt, f"{where}: never says 'diagnosed'")
+    at.button(key="b_save_obs").click().run()
+    no_errors(at, f"{where} save observation")
+    check(bool(at.session_state["plant_result"]["saved_id"]), f"{where}: observation saved to the farm record")
+    # yellowing alone → no specific disease, several causes + note
+    at.checkbox(key="sym_rust_pustules").uncheck()
+    at.checkbox(key="sym_streaks").uncheck()
+    at.checkbox(key="sym_yellowing").check()
+    at.run()
+    at.button(key="b_analyze").click().run()
+    txt = visible_text(at)
+    check("قد يتوافق مع" not in txt, f"{where}: yellowing alone does not name a specific disease")
+    check("اصفرار الأوراق قد يرتبط بعدة أسباب" in txt, f"{where}: yellowing ambiguity note shown")
+    # farm record + field validation
+    at.session_state["fpage"] = "log"
+    at.run()
+    no_errors(at, f"{where} farm record")
+    check(any("المنطقة" in e.label for e in at.expander), f"{where}: saved observation listed in the farm record")
+    sub = [b for b in at.button if "حفظ نتيجة التحقق" in str(b.label)]
+    check(bool(sub), f"{where}: field-validation form available in the record")
+    if sub:
+        sub[0].click().run()
+        no_errors(at, f"{where} save field result")
+        check(any("تم حفظ نتيجة التحقق" in s.value for s in at.success), f"{where}: field result saved")
 
 
 def main(project: str | None) -> int:
     os.environ["RAY_DATA_DIR"] = tempfile.mkdtemp(prefix="ray_test_")  # never touch real farmer data
-    # ---- demo mode ----
-    at = new_app(DEMO_SRC)
-    no_errors(at, "demo home")
-    check("DEMO DATA" in text(at), "demo: DEMO DATA badge visible")
-    check(at.session_state["mode"] == "farmer", "demo: Farmer mode is the default")
-    exp = expected_demo_classes()
-    top = sorted([z for z, c in exp.items() if c == "HIGH"])
-    check(bool(top) and f"{top[0]}" in text(at) and "تحتاج فحص" in text(at), f"demo: today's priority matches pipeline HIGH zone {top}")
-    at.button(key="b_prio").click().run()
-    check(at.session_state["fpage"] == "zones" and at.session_state["zone_sel"] == top[0], "demo: 'Inspect this area' opens that zone")
-    no_errors(at, "demo zone via button")
-    at.session_state["fpage"] = "home"
-    at.run()
-    at.button(key="b_map").click().run()
-    check(at.session_state["fpage"] == "map", "demo: 'View Farm Map' navigates")
-    at.button(key="b_details").click().run()
-    check(at.session_state["fpage"] == "zones", "demo: 'View details' navigates")
-    run_pages(lambda lang: new_app(DEMO_SRC, lang=lang), "demo")
+    at = new_app("demo")
+    no_errors(at, "demo start")
+    check(at.session_state["fpage"] == "home", "app opens on the farmer home page")
+    top = expected_demo_top()
+    check(f"المنطقة {top}" in visible_text(at), f"demo: highest-priority zone from the pipeline shown ({top})")
+    run_all(at, "demo")
 
-    # ---- Earth Engine selected but failing: explicit error, no silent demo ----
-    bad = new_app(EE_SRC, "ray-nonexistent-project-000")
-    check(any("تعذّر تحميل" in e.value or "could not be loaded" in e.value for e in bad.error), "EE failure: clear error shown")
-    check("class='databadge" not in text(bad), "EE failure: no results shown silently")
-    bad.button(key="b_use_demo").click().run()
-    no_errors(bad, "EE failure -> explicit demo")
-    check("DEMO DATA" in text(bad), "EE failure: demo only after explicit click")
+    bad = new_app("earth_engine", "ray-nonexistent-project-000")
+    txt = visible_text(bad)
+    check("تعذّر تحميل بيانات المزرعة حاليًا" in txt, "Earth Engine failure: plain farmer message")
+    check(not [w for w in TECH_TERMS if w in txt] and not bad.exception and not bad.error,
+          "Earth Engine failure: no technical error or stack trace shown")
 
-    # ---- Earth Engine mode (real data) ----
     if project:
-        ee = new_app(EE_SRC, project)
-        no_errors(ee, "EE home")
-        check("class='databadge real" in text(ee), "EE: real-data badge visible")
-        check("DEMO DATA" not in text(ee), "EE: no demo label in real mode")
-        run_pages(lambda lang: new_app(EE_SRC, project, lang=lang), "EE")
+        ee = new_app("earth_engine", project)
+        no_errors(ee, "real-data start")
+        check("آخر صورة فضائية لمزرعتك" in visible_text(ee), "real data: satellite image date shown")
+        ee.session_state["fpage"] = "map"
+        ee.run()
+        check(not ee.error and "تعذّر تحميل إحدى طبقات الخريطة" not in visible_text(ee), "real data: map image loads without error")
+        run_all(ee, "real")
 
     print(f"\n{'ALL PASS' if not FAIL else f'{len(FAIL)} FAILURE(S)'}")
     return 1 if FAIL else 0

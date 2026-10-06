@@ -68,6 +68,12 @@ div.stButton > button[kind="primary"]:hover {{ background:{GREEN_DARK}; border-c
 .legend-big {{ display:flex; flex-wrap:wrap; gap:8px 16px; font-size:1rem; margin:6px 0; }}
 .legend-big span.sw {{ display:inline-block; width:16px; height:16px; border-radius:4px; vertical-align:-3px; margin-inline-end:6px; }}
 .checklist li {{ font-size:1.05rem; margin-bottom:5px; }}
+.status-line {{ font-size:1.25rem; font-weight:600; margin:6px 0; }}
+.side-brand {{ display:flex; align-items:center; gap:8px; font-size:1.5rem; font-weight:700; color:{GREEN_DARK}; margin-bottom:12px; }}
+.side-brand img {{ height:36px; }}
+[data-testid="stSidebar"] {{ background:{GREEN_LIGHT}; }}
+[data-testid="stSidebar"] [data-testid="stRadio"] label p {{ font-size:1.08rem; }}
+[data-testid="stSidebar"] [data-testid="stRadio"] label {{ padding:6px 0; }}
 .step {{ font-size:1.05rem; font-weight:700; color:{GREEN}; margin:14px 0 6px 0; }}
 
 /* ---------- technical mode (kept from the original dashboard) ---------- */
@@ -110,6 +116,7 @@ RTL_CSS = """
 /* Arabic: right-to-left text in the farmer views (maps/charts keep their own layout) */
 [data-testid="stMain"] .stMarkdown, [data-testid="stMain"] .stCaption, [data-testid="stMain"] [data-testid="stExpander"] summary,
 [data-testid="stMain"] [data-testid="stCheckbox"], [data-testid="stMain"] [data-testid="stRadio"], [data-testid="stMain"] [data-testid="stWidgetLabel"],
+[data-testid="stSidebar"] .stMarkdown, [data-testid="stSidebar"] [data-testid="stRadio"], [data-testid="stSidebar"] [data-testid="stWidgetLabel"],
 .status-hero, .zone-card, .card, .note-card, .cause, .legend-big, .databadge, .topbar .sub, .tiles {
   direction: rtl; text-align: right; font-family: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, sans-serif; }
 div.stButton > button p { font-family: 'IBM Plex Sans Arabic', 'Segoe UI', sans-serif; font-size:1.08rem; }

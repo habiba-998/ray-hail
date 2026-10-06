@@ -21,6 +21,9 @@ from ..indices import PALETTES, VIS_RANGES, colorize, true_color
 from ..preprocessing import zone_at
 from ..visualization import build_map
 
+import logging
+
+log = logging.getLogger("ray")
 Ctx = SimpleNamespace  # holds every result of the pipeline for the current run (built in app.py)
 
 # Show the "unusual pattern" note for a zone the rules did NOT flag when its share of Isolation-Forest-unusual
@@ -31,7 +34,7 @@ ANOMALY_NOTE_FACTOR = 2.0
 # ---------------------------------------------------------------------------
 # Cached data access (unchanged calls)
 # ---------------------------------------------------------------------------
-@st.cache_resource(show_spinner="Generating DEMO scene (simulated data)…")
+@st.cache_resource(show_spinner="جارٍ تحميل بيانات المزرعة…")
 def get_demo_farm(bounds: tuple) -> DemoFarm:
     return DemoFarm(bounds)
 
@@ -78,17 +81,17 @@ def synced_control(label: str, options: list, state_key: str, format_func) -> st
     return st.session_state[state_key]
 
 
-@st.cache_data(ttl=3600, show_spinner="Searching Sentinel-2 acquisitions…")
+@st.cache_data(ttl=3600, show_spinner="جارٍ تحميل بيانات المزرعة…")
 def ee_dates(bounds, start, end, max_cloud):
     return gee.list_s2_dates(bounds, start, end, max_cloud)
 
 
-@st.cache_data(ttl=3600, show_spinner="Computing zone statistics from Sentinel-2 & Landsat…")
+@st.cache_data(ttl=3600, show_spinner="جارٍ تحميل بيانات المزرعة…")
 def ee_zone_stats(bounds, zones_records, date, prev_date):
     return gee.zone_stats(bounds, zones_records, date, prev_date)
 
 
-@st.cache_data(ttl=3600, show_spinner="Rendering satellite layer…")
+@st.cache_data(ttl=3600, show_spinner="جارٍ تحميل بيانات المزرعة…")
 def ee_layer(bounds, date, layer, farm_ref, thr):
     url = gee.layer_tile_url(bounds, date, layer, farm_ref, thr)
     if url:
@@ -125,27 +128,33 @@ def _warm_tiles(url: str, bounds: tuple) -> None:
     threading.Thread(target=run, daemon=True).start()
 
 
-@st.cache_data(ttl=3600, show_spinner="Sampling cropped pixels…")
+@st.cache_data(ttl=3600, show_spinner="جارٍ تحميل صورة المزرعة…")
+def ee_true_color(bounds, date):
+    """Real Sentinel-2 true-colour PNG via computePixels (works without the map-layer permission)."""
+    return gee.true_color_png(bounds, date)
+
+
+@st.cache_data(ttl=3600, show_spinner="جارٍ تحميل بيانات المزرعة…")
 def ee_samples(bounds, date):
     return gee.pixel_samples(bounds, date)
 
 
-@st.cache_data(ttl=3600, show_spinner="Building Sentinel-2 time series…")
+@st.cache_data(ttl=3600, show_spinner="جارٍ تحميل بيانات المزرعة…")
 def ee_ts(bounds, start, end, max_cloud):
     return gee.timeseries(bounds, start, end, max_cloud)
 
 
-@st.cache_data(ttl=3600, show_spinner="Building Landsat thermal time series…")
+@st.cache_data(ttl=3600, show_spinner="جارٍ تحميل بيانات المزرعة…")
 def ee_lst_ts(bounds, start, end):
     return gee.lst_timeseries(bounds, start, end)
 
 
-@st.cache_data(ttl=3600, show_spinner="Loading ERA5-Land weather…")
+@st.cache_data(ttl=3600, show_spinner="جارٍ تحميل بيانات المزرعة…")
 def ee_weather(lat, lon, start, end):
     return gee.weather(lat, lon, start, end)
 
 
-@st.cache_data(ttl=3600, show_spinner="Loading Sentinel-1 radar…")
+@st.cache_data(ttl=3600, show_spinner="جارٍ تحميل بيانات المزرعة…")
 def ee_s1(bounds, zones_records, date):
     return gee.s1_zone_stats(bounds, zones_records, date)
 
@@ -217,10 +226,16 @@ def anomaly_watch(c: Ctx, contamination: float) -> pd.DataFrame:
 def render_farm_map(c: Ctx, layer: str, key_prefix: str, zone_fill: float, height: int = 580,
                     short_attribution: bool = False, **map_kw) -> None:
     tile_url, img = None, None
-    attribution = ("Copernicus Sentinel-2 · Google Earth Engine" if short_attribution
-                   else "Contains modified Copernicus Sentinel data, processed in Google Earth Engine")
+    attribution = "© Copernicus" if short_attribution else "Contains modified Copernicus Sentinel data, processed in Google Earth Engine"
     try:
-        if c.use_ee:
+        if c.use_ee and layer == "True Color" and short_attribution:
+            # farmer map: one PNG image (needs only the computation permission, not map-layer creation)
+            from io import BytesIO
+
+            from PIL import Image
+
+            img = np.asarray(Image.open(BytesIO(ee_true_color(c.bounds, c.date))).convert("RGBA"))
+        elif c.use_ee:
             ee_name = "Stress (pixel)" if layer == "Water Stress" else layer
             tile_url = ee_layer(c.bounds, c.date, ee_name,
                                 c.ref["ndvi_median"] if np.isfinite(c.ref["ndvi_median"]) else 0.6, asdict(c.thr))
@@ -242,9 +257,11 @@ def render_farm_map(c: Ctx, layer: str, key_prefix: str, zone_fill: float, heigh
             else:
                 lo, hi = VIS_RANGES[layer]
                 img = colorize(farm.index_grid(c.date, layer), PALETTES[layer], lo, hi, alpha=235)
-            attribution = "DEMO DATA – simulated"
-    except Exception as exc:  # noqa: BLE001
-        st.error(f"Layer rendering failed: {exc}")
+            attribution = "بيانات تجريبية" if short_attribution else "DEMO DATA – simulated"
+    except Exception as exc:  # noqa: BLE001 -- never show technical errors to the farmer
+        log.warning("map layer failed: %s", exc)
+        tile_url, img = None, None
+        st.info("تعذّر تحميل إحدى طبقات الخريطة حاليًا. يمكنك الاستمرار باستخدام خريطة المناطق.")
 
     fmap = build_map(c.bounds, c.scored, st.session_state.zone_sel, tile_url, img, layer,
                      zone_fill=zone_fill, attribution=attribution, **map_kw)

@@ -18,7 +18,7 @@ from . import knowledge
 
 CAUSES = {
     "water": {"icon": "💧", "en": "Possible water stress", "ar": "إجهاد مائي محتمل"},
-    "heat": {"icon": "☀️", "en": "Possible heat stress", "ar": "إجهاد حراري محتمل"},
+    "heat": {"icon": "🌡️", "en": "Possible heat stress", "ar": "إجهاد حراري محتمل"},
     "disease": {"icon": "🦠", "en": "Possible plant disease", "ar": "مرض نباتي محتمل"},
     "pest": {"icon": "🐛", "en": "Possible pest or insect", "ar": "آفة أو حشرة محتملة"},
     "nutrient": {"icon": "🧪", "en": "Possible nutrient deficiency", "ar": "نقص غذائي محتمل"},
@@ -161,3 +161,23 @@ def matching_problems(crop_id: str, symptoms: list[str] | None) -> list[dict]:
         if hits:
             ranked.append({"problem": p, "matches": sorted(hits), "n": len(hits)})
     return sorted(ranked, key=lambda r: -r["n"])
+
+
+# Symptoms with many possible causes (water, heat, nutrients, salinity, disease, pests). On their own they are never
+# enough to point to a specific disease or pest.
+AMBIGUOUS_TAGS = {"yellowing", "wilting", "leaf_curl"}
+
+
+def specific_suspicions(crop_id: str, symptoms: list[str] | None) -> list[dict]:
+    """Crop problems whose documented symptoms overlap with at least one DISTINCTIVE symptom the farmer reported.
+
+    Suspicion level from the number of overlapping symptoms: 1 → weak, 2 → moderate, ≥3 → strong.
+    A preliminary match, never a diagnosis.
+    """
+    out = []
+    for m in matching_problems(crop_id, symptoms):
+        if not set(m["matches"]) - AMBIGUOUS_TAGS:
+            continue
+        lv = "strong" if m["n"] >= 3 else "moderate" if m["n"] == 2 else "weak"
+        out.append({**m, "level": lv, "level_ar": {"strong": "مرتفعة", "moderate": "متوسطة", "weak": "منخفضة"}[lv]})
+    return out

@@ -201,6 +201,29 @@ def layer_tile_url(bounds: Bounds, date: str, layer: str, farm_ref_ndvi: float, 
     return img.clip(region).getMapId(vis)["tile_fetcher"].url_format
 
 
+def true_color_png(bounds: Bounds, date: str, width: int = 800) -> bytes:
+    """True-colour PNG of the farm for one Sentinel-2 date, computed with ee.data.computePixels.
+
+    Unlike getMapId (tile layers), this needs only the 'computations' permission – the same one the zone statistics
+    use – so it works for a service account that is not allowed to create map layers ('earthengine.maps.create').
+    """
+    ee = _ee()
+    region = _rect(bounds)
+    img = _s2_on_date(region, date).select(["B4", "B3", "B2"]).visualize(min=0.0, max=0.35, gamma=1.2)
+    min_lon, min_lat, max_lon, max_lat = bounds
+    height = max(1, int(round(width * (max_lat - min_lat) / (max_lon - min_lon) / np.cos(np.radians((min_lat + max_lat) / 2)))))
+    return ee.data.computePixels({
+        "expression": img,
+        "fileFormat": "PNG",
+        "grid": {
+            "dimensions": {"width": width, "height": height},
+            "affineTransform": {"scaleX": (max_lon - min_lon) / width, "shearX": 0, "translateX": min_lon,
+                                "shearY": 0, "scaleY": -(max_lat - min_lat) / height, "translateY": max_lat},
+            "crsCode": "EPSG:4326",
+        },
+    })
+
+
 def pixel_stress_ee(cur, farm_ref_ndvi: float, t: Thresholds):
     """Per-pixel stress class (0 green, 1 yellow, 2 red) from NDMI, NDRE and relative NDVI."""
     ndvi, ndre, ndmi = cur.select("NDVI"), cur.select("NDRE"), cur.select("NDMI")
