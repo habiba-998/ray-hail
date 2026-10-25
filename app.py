@@ -140,8 +140,8 @@ start, end, max_cloud = (today - dt.timedelta(days=150), today, 30) if use_ee el
 # Header: brand + farm picker; the data-status line is filled once the data are known
 # ---------------------------------------------------------------------------
 with st.container(key="header"):
-    _cols = st.columns([3, 2], vertical_alignment="center")
-    brand_col, farm_col = (_cols[1], _cols[0]) if is_ar() else (_cols[0], _cols[1])
+    # brand first in the DOM so it stacks on top on phones; in Arabic, CSS flows the row right-to-left on wide screens
+    brand_col, farm_col = st.columns([3, 2], vertical_alignment="center")
     brand_col.markdown(
         f"<div class='brand'><img src='data:image/svg+xml;base64,{ICON_B64}' alt=''>"
         f"<div><h1>{t('app_name')}</h1><div class='sub'>{t('subtitle')}</div></div></div>",

@@ -31,7 +31,7 @@ html, body, [class*="css"], button, input, textarea, select {{
 [data-testid="stAppViewContainer"], [data-testid="stMain"] {{ background:#FAFBFA; }}
 
 /* ---------- header ---------- */
-.st-key-header {{ background:#fff; border:1px solid {LINE}; border-radius:14px; padding:10px 16px 4px 16px; }}
+.st-key-header {{ background:#fff; border:1px solid {LINE}; border-radius:14px; padding:10px 16px 18px 16px; }}
 .brand {{ display:flex; align-items:center; gap:12px; }}
 .brand img {{ height:42px; }}
 .brand h1 {{ margin:0; padding:0; font-size:1.6rem; font-weight:700; color:{GREEN_DARK}; line-height:1.1; }}
@@ -89,6 +89,12 @@ div.stButton > button[kind="primary"]:hover, div.stFormSubmitButton > button[kin
 .legend-big {{ display:flex; flex-wrap:wrap; gap:6px 8px; margin:4px 0 8px 0; }}
 .legend-big > span {{ display:inline-flex; align-items:center; gap:6px; background:#fff; border:1px solid {LINE}; border-radius:999px; padding:3px 10px; font-size:.9rem; }}
 .legend-big span.sw {{ display:inline-block; width:12px; height:12px; border-radius:3px; }}
+.ind-table {{ width:100%; border-collapse:separate; border-spacing:0; background:#fff; border:1px solid {LINE}; border-radius:12px; overflow:hidden; font-size:.95rem; }}
+.ind-table th {{ background:#F4F7F5; color:{MUTED}; font-weight:600; padding:8px 10px; text-align:start; border-bottom:1px solid {LINE}; }}
+.ind-table td {{ padding:8px 10px; border-bottom:1px solid #EEF2EF; }}
+.ind-table tr:last-child td {{ border-bottom:0; }}
+.flag {{ border-radius:999px; padding:1px 10px; font-weight:600; font-size:.85rem; white-space:nowrap; }}
+.flag.yes {{ background:#FDECEB; color:#A12F2B; }} .flag.no {{ background:#EAF6EF; color:#1E5B38; }} .flag.na {{ background:#F1F3F4; color:{MUTED}; }}
 .checklist {{ padding-inline-start:4px; list-style:none; }}
 .checklist li {{ font-size:1.02rem; margin-bottom:6px; }}
 .status-line {{ font-size:1.1rem; font-weight:600; margin:6px 0; }}
@@ -101,6 +107,12 @@ div.stButton > button[kind="primary"]:hover, div.stFormSubmitButton > button[kin
   .kpis {{ grid-template-columns:repeat(2, minmax(0,1fr)); }}
   .kpi .n {{ font-size:1.6rem; }} .q {{ font-size:1.2rem; }}
   .zone-card .z {{ font-size:1.15rem; }}
+  /* phones: one horizontally scrollable row of tabs instead of three wrapped rows */
+  .st-key-topnav [data-testid="stButtonGroup"] [role="radiogroup"] {{ flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none;
+    -webkit-overflow-scrolling:touch; padding-bottom:2px; }}
+  .st-key-topnav [data-testid="stButtonGroup"] [role="radiogroup"]::-webkit-scrollbar {{ display:none; }}
+  .st-key-topnav [data-testid="stButtonGroup"] [role="radiogroup"] > button {{ flex:0 0 auto; white-space:nowrap; }}
+  .ind-table {{ font-size:.86rem; }} .ind-table th, .ind-table td {{ padding:6px 6px; }}
 }}
 </style>
 """
@@ -113,7 +125,7 @@ RTL_CSS = """
 [data-testid="stMain"] [data-testid="stAlert"], [data-testid="stMain"] [data-testid="stForm"],
 .zone-card, .card, .note-card, .cause, .legend-big, .databadge, .brand, .statusbar, .kpis {
   direction: rtl; text-align: right; }
-.st-key-topnav [data-testid="stButtonGroup"] { direction: rtl; }
+.st-key-topnav [data-testid="stButtonGroup"], .st-key-header [data-testid="stHorizontalBlock"], .ind-table { direction: rtl; }
 </style>
 """
 

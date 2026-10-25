@@ -134,7 +134,9 @@ def temporal_summary(ts: pd.DataFrame, date: str, col: str = "NDVI", min_obs: in
 
     Baseline = median of the (up to) 3 observations preceding each observation of interest. Needs `min_obs` clear
     observations, otherwise status is "insufficient" (no conclusion is invented). Statuses: insufficient | stable |
-    decline (latest below baseline by > drop) | persistent_decline (the previous observation was also below its baseline).
+    decline (latest below baseline by > drop) | persistent_decline (the previous observation was also below its baseline)
+    | below_earlier (no recent drop, but the latest value is > drop below the earlier peak of the period, where the peak is
+    the highest 3-observation running median before the recent window, so a single noisy image cannot set it).
     A decline is NOT a diagnosis: harvest, cutting, growth stage and cloud residue look the same in NDVI.
     """
     d = ts.dropna(subset=[col]).copy() if ts is not None and not ts.empty and col in ts else pd.DataFrame()
@@ -142,7 +144,7 @@ def temporal_summary(ts: pd.DataFrame, date: str, col: str = "NDVI", min_obs: in
         d = d[d["date"] <= pd.Timestamp(date)].sort_values("date")
     n = len(d)
     out = {"n": n, "status": "insufficient", "latest": np.nan, "baseline": np.nan, "delta": np.nan, "slope_10d": np.nan,
-           "first_date": None, "last_date": None}
+           "earlier_peak": np.nan, "first_date": None, "last_date": None}
     if n:
         out.update(first_date=d["date"].iloc[0].strftime("%Y-%m-%d"), last_date=d["date"].iloc[-1].strftime("%Y-%m-%d"))
     if n < min_obs:
@@ -152,8 +154,13 @@ def temporal_summary(ts: pd.DataFrame, date: str, col: str = "NDVI", min_obs: in
     base_prev = float(np.median(vals[max(0, n - 5):n - 2]))
     delta_last, delta_prev = vals[-1] - base_last, vals[-2] - base_prev
     out.update(latest=float(vals[-1]), baseline=base_last, delta=float(delta_last), slope_10d=trend_slope(d, col))
+    earlier = pd.Series(vals[:max(0, n - 3)]).rolling(3, min_periods=3).median().dropna()
+    if len(earlier):
+        out["earlier_peak"] = float(earlier.max())
     if delta_last < -drop:
         out["status"] = "persistent_decline" if delta_prev < -drop else "decline"
+    elif np.isfinite(out["earlier_peak"]) and vals[-1] < out["earlier_peak"] - drop:
+        out["status"] = "below_earlier"
     else:
         out["status"] = "stable"
     return out

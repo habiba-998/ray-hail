@@ -101,6 +101,17 @@ def test_temporal_stable_decline_and_persistent_decline():
     assert analysis.temporal_summary(_series([0.6, 0.61, 0.6, 0.45, 0.44]), "2026-12-31")["status"] == "persistent_decline"
 
 
+def test_temporal_flags_values_below_the_earlier_peak_without_a_recent_drop():
+    # growth to a plateau, an older sharp drop, then a flat recent period: short-term "stable" would hide the drop
+    s = analysis.temporal_summary(_series([0.3, 0.4, 0.5, 0.6, 0.6, 0.6, 0.6, 0.45, 0.45, 0.44, 0.44]), "2026-12-31")
+    assert s["status"] == "below_earlier" and s["earlier_peak"] == pytest.approx(0.6)
+
+
+def test_temporal_peak_ignores_a_single_noisy_spike():
+    s = analysis.temporal_summary(_series([0.4, 0.4, 0.9, 0.4, 0.4, 0.4, 0.4, 0.4]), "2026-12-31")
+    assert s["status"] == "stable"
+
+
 def test_temporal_ignores_observations_after_the_analysis_date_and_nan():
     ts = _series([0.6, np.nan, 0.6, 0.6, 0.6, 0.2])
     s = analysis.temporal_summary(ts, "2026-06-16")   # excludes later (collapsed) observations and the NaN
@@ -224,3 +235,23 @@ def test_no_photo_modules_or_symbols_remain():
     offenders = [str(p.relative_to(root)) for p in (root / "src").rglob("*.py")
                  if any(w in p.read_text(encoding="utf-8") for w in ("file_uploader", "ANALYZER", "camera_input", "prepare_for_storage"))]
     assert offenders == []
+
+
+# ------------------------------------------------------------------ UI helpers (no Streamlit run needed)
+def test_trend_query_failure_is_unavailable_not_insufficient():
+    from types import SimpleNamespace
+    from src.ui import farmer
+
+    class Boom:
+        def timeseries(self, _):
+            raise ConnectionError("timed out")
+
+    c = SimpleNamespace(use_ee=False, farm=Boom(), date="2026-09-20")
+    ts, failed = farmer._zone_series(c, {"min_lon": 0, "min_lat": 0, "max_lon": 1, "max_lat": 1})
+    assert ts is None and failed is True
+
+
+def test_ndvi_ratio_label_says_it_is_a_ratio_in_both_languages():
+    from src.ui.i18n import S
+    en, ar = S["ind_ndvi"]
+    assert "ratio" in en and "نسبة" in ar

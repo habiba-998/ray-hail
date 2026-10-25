@@ -119,7 +119,7 @@ by its own threshold. Thresholds live in `src/config.py`.
 
 For the selected zone: the latest NDVI is compared with the median of the up-to-3 preceding clear observations of the
 same zone. ≥ 4 clear observations are required, otherwise **"insufficient data"** is shown. A drop > 0.08 (provisional)
-is a *decline*; if the previous observation also dropped it is a *repeated decline*. No seasonal baseline, crop type or
+is a *decline*; if the previous observation also dropped it is a *repeated decline*. If there is no recent drop but the latest value is more than 0.08 below the earlier peak of the period (the highest 3-image running median before the recent images, so one noisy image cannot set it), the status is *below the earlier peak*. If the time-series query fails, the page says the series is *unavailable* (not "insufficient data"). The chart shows day/month dates, Arabic axis titles and the baseline as a dashed line. No seasonal baseline, crop type or
 growth stage is modelled, so harvest, cutting, planting and phenology also appear as change. The temporal result is
 shown as evidence; it does not change the zone class.
 

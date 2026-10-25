@@ -217,13 +217,26 @@ IND_KEY = {"NDVI vs farm median": "ind_ndvi", "NDMI (canopy water)": "ind_ndmi",
            "LST vs farm mean (°C)": "ind_lst", "NDVI change (~2 weeks)": "ind_dndvi"}
 
 
-def _indicator_table(z: dict) -> None:
-    rows = []
+def _limits(thr) -> dict:
+    """Screening limit (the 1-point threshold) of each rule, as shown to the user."""
+    return {"NDVI vs farm median": f"< {thr.ndvi_rel_mod:.2f}", "NDMI (canopy water)": f"< {thr.ndmi_mod:.2f}",
+            "NDRE (chlorophyll)": f"< {thr.ndre_mod:.2f}", "LST vs farm mean (°C)": f"> +{thr.lst_mod:.1f}",
+            "NDVI change (~2 weeks)": f"< {thr.dndvi_mod:.2f}"}
+
+
+def _indicator_table(c: Ctx, z: dict) -> None:
+    """Plain HTML table (right-to-left, no data-grid toolbar) with the value, the provisional limit and the flag."""
+    lim = _limits(c.thr)
+    head = "".join(f"<th>{t(k)}</th>" for k in ("ind_col_name", "ind_col_value", "ind_col_limit", "ind_col_flag"))
+    body = ""
     for k, (pts, val, _rule) in z["rules"].items():
         flag = t("flag_na") if pts is None else t("flag_yes") if pts > 0 else t("flag_no")
-        rows.append({t("ind_col_name"): t(IND_KEY[k]), t("ind_col_value"): fmt(val, 2, signed=k.startswith(("LST", "NDVI change"))),
-                     t("ind_col_flag"): flag})
-    st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
+        cls = "na" if pts is None else "yes" if pts > 0 else "no"
+        value = fmt(val, 2, signed=k.startswith(("LST", "NDVI change")))
+        body += (f"<tr><td>{t(IND_KEY[k])}</td><td>{ltr(value)}</td><td>{ltr(lim[k] if pts is not None else '—')}</td>"
+                 f"<td><span class='flag {cls}'>{flag}</span></td></tr>")
+    st.markdown(f"<table class='ind-table'><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table>"
+                f"<div class='muted' style='margin-top:6px'>{t('ind_note')}</div>", unsafe_allow_html=True)
     with st.expander(tr("Technical rule table", "جدول القواعد التقني")):
         st.dataframe(analysis.rule_table(z), hide_index=True, width="stretch")
 
@@ -249,7 +262,7 @@ def page_zones(c: Ctx) -> None:
         section(t("z_why_flag"))
         st.markdown("\n".join(f"- {w}" for w in _why_lines(z)))
         section(t("z_values"))
-        _indicator_table(z)
+        _indicator_table(c, z)
         section(t("z_quality"))
         _quality_line(z)
         section(t("z_reference"))
@@ -349,10 +362,11 @@ def page_tech(c: Ctx) -> None:
     details.render(c)
 
 
-def _zone_series(c: Ctx, z: dict):
+def _zone_series(c: Ctx, z: dict) -> tuple[pd.DataFrame | None, bool]:
     """Real NDVI series of one zone up to the analysis date (cached satellite query, or the local demo farm).
 
-    Returns the DataFrame (possibly with few rows) or None when the query failed. Nothing is interpolated.
+    Returns (series or None, query_failed). A failed query is reported as unavailable, never as "insufficient data".
+    Nothing is interpolated.
     """
     zb = (z["min_lon"], z["min_lat"], z["max_lon"], z["max_lat"])
     try:
@@ -361,26 +375,46 @@ def _zone_series(c: Ctx, z: dict):
         else:
             ts = c.farm.timeseries(zb)
     except Exception as exc:  # noqa: BLE001 -- optional context, never blocks the page
-        log.warning("zone trend skipped: %s", exc)
-        return None
+        log.warning("zone trend unavailable: %s", exc)
+        return None, True
     if ts is None or ts.empty or "NDVI" not in ts:
-        return None
+        return None, False
     ts = ts.dropna(subset=["NDVI"])
-    return ts[ts.date <= pd.Timestamp(c.date)]
+    return ts[ts.date <= pd.Timestamp(c.date)], False
+
+
+def _trend_chart(ts: pd.DataFrame, baseline: float):
+    """NDVI over time with day/month dates (no English month names), Arabic axis titles and the baseline as a dashed line."""
+    import altair as alt
+
+    d = ts[["date", "NDVI"]].copy()
+    x = alt.X("date:T", title=t("tr_axis_date"), axis=alt.Axis(format="%d/%m", labelAngle=0, tickCount=6))
+    y = alt.Y("NDVI:Q", title=t("tr_axis_val"), scale=alt.Scale(zero=False))
+    line = alt.Chart(d).mark_line(color="#2F7D4E", strokeWidth=2.5).encode(x=x, y=y)
+    pts = alt.Chart(d).mark_circle(color="#2F7D4E", size=28).encode(
+        x=x, y=y, tooltip=[alt.Tooltip("date:T", title=t("tr_axis_date"), format="%Y-%m-%d"),
+                           alt.Tooltip("NDVI:Q", title=t("tr_axis_val"), format=".2f")])
+    rule = alt.Chart(pd.DataFrame({"b": [baseline]})).mark_rule(color="#5E6E66", strokeDash=[5, 4]).encode(y="b:Q")
+    return (line + pts + rule).properties(height=230).configure_axis(labelFontSize=12, titleFontSize=13, titleFontWeight=600)
 
 
 def trend_block(c: Ctx, z: dict) -> None:
-    """Same-zone temporal comparison; says 'insufficient data' instead of inventing a conclusion."""
+    """Same-zone temporal comparison; says 'insufficient data' / 'unavailable' instead of inventing a conclusion."""
     section(t("trend_title"))
-    ts = _zone_series(c, z)
+    ts, failed = _zone_series(c, z)
+    if failed:
+        st.caption(t("tr_unavailable"))
+        return
     summ = analysis.temporal_summary(ts, c.date) if ts is not None else {"n": 0, "status": "insufficient"}
     if summ["status"] == "insufficient":
         st.caption(t("tr_insufficient", n=summ["n"], m=TREND_MIN_OBS))
         return
-    dot = {"stable": "🟢", "decline": "🟡", "persistent_decline": "🔴"}[summ["status"]]
-    st.markdown(f"<div class='status-line'>{dot} {t('tr_' + summ['status'])}</div>", unsafe_allow_html=True)
-    st.line_chart(ts.set_index("date")["NDVI"].rename(t("trend_axis")), height=200)
-    st.caption(t("tr_baseline", latest=fmt(summ["latest"]), base=fmt(summ["baseline"])) + " "
+    # neutral icon for "stable": no recent change is not the same as healthy
+    dot = {"stable": "⚪", "below_earlier": "🟠", "decline": "🟡", "persistent_decline": "🔴"}[summ["status"]]
+    text = t("tr_below_earlier", peak=fmt(summ["earlier_peak"])) if summ["status"] == "below_earlier" else t("tr_" + summ["status"])
+    st.markdown(f"<div class='status-line'>{dot} {text}</div>", unsafe_allow_html=True)
+    st.altair_chart(_trend_chart(ts, summ["baseline"]), width="stretch")
+    st.caption(t("tr_legend_base") + " · " + t("tr_baseline", latest=fmt(summ["latest"]), base=fmt(summ["baseline"])) + " "
                + t("trend_basis", n=summ["n"], a=ltr(summ["first_date"]), b=ltr(summ["last_date"])), unsafe_allow_html=True)
 
 
