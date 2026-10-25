@@ -68,6 +68,10 @@ VEG_NDVI_MIN = 0.25          # pixels above this NDVI are treated as crop canopy
 MIN_VEG_FRACTION = 0.10      # zones with less canopy than this are "No active crop"
 MIN_CLEAR_FRACTION = 0.50    # zones with fewer cloud-free pixels are "Insufficient data"
 TS_MIN_CLEAR_FRACTION = 0.60 # time-series observations below this are dropped
+MIN_INDICATORS = 3           # a zone needs at least this many scored indicators, otherwise it is "Insufficient data"
+MIN_ZONE_PIXELS = 30         # Isolation-Forest share is reported for a zone only if >= this many sampled pixels fall in it
+TREND_MIN_OBS = 4            # temporal comparison needs at least this many clear observations, otherwise "insufficient"
+TREND_DROP = 0.08            # provisional: NDVI this far below the median of the preceding observations counts as a drop
 
 
 @dataclass

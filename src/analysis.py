@@ -1,4 +1,8 @@
-"""Transparent rule-based stress scoring, temporal anomaly detection and recommendations.
+"""Transparent rule-based screening, temporal analysis and recommendations.
+
+HEURISTIC PRIORITY INDEX (not a probability): score = points / max_points, i.e. the share of the evaluable indicators'
+maximum points that a zone collected. It only orders zones for inspection; it is not calibrated and must not be shown
+with a percentage sign. All thresholds are provisional screening rules (see config.Thresholds).
 
 This is a PROTOTYPE DECISION-SUPPORT MODEL. Each indicator adds 0, 1 or 2 points
 when it crosses a documented threshold (see config.Thresholds). The zone class
@@ -11,7 +15,8 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from .config import MIN_CLEAR_FRACTION, MIN_VEG_FRACTION, VEG_NDVI_MIN, Thresholds
+from .config import (MIN_CLEAR_FRACTION, MIN_INDICATORS, MIN_VEG_FRACTION, TREND_DROP, TREND_MIN_OBS, VEG_NDVI_MIN,
+                     Thresholds)
 
 
 def _pts(value: float, high: float, mod: float, higher_is_worse: bool = False) -> int | None:
@@ -52,6 +57,8 @@ def score_zones(zones: pd.DataFrame, t: Thresholds) -> tuple[pd.DataFrame, dict]
         max_pts = 2 * len(got)
         z["points"] = pts
         z["max_points"] = max_pts
+        z["n_signals"] = len(got)                                  # indicators that could be evaluated
+        z["n_flagged"] = sum(1 for v in got.values() if v[0] > 0)  # indicators that crossed a (provisional) threshold
         z["score"] = pts / max_pts if max_pts else np.nan
         z["rules"] = rules
 
@@ -59,8 +66,8 @@ def score_zones(zones: pd.DataFrame, t: Thresholds) -> tuple[pd.DataFrame, dict]
             z["cls"] = "NO_DATA"
         elif not np.isfinite(z.get("veg_frac") or np.nan) or z["veg_frac"] < MIN_VEG_FRACTION:
             z["cls"] = "NO_CROP"
-        elif not max_pts:
-            z["cls"] = "NO_DATA"
+        elif len(got) < MIN_INDICATORS:
+            z["cls"] = "NO_DATA"  # too few indicators to score honestly (a single indicator must not decide a class)
         elif z["score"] >= t.red_share:
             z["cls"] = "HIGH"
         elif z["score"] >= t.yellow_share:
@@ -119,6 +126,44 @@ def trend_slope(ts: pd.DataFrame, col: str, last_n: int = 6) -> float:
         return np.nan
     x = (d["date"] - d["date"].iloc[0]).dt.days.to_numpy(dtype=float)
     return float(np.polyfit(x, d[col].to_numpy(dtype=float), 1)[0] * 10)
+
+
+def temporal_summary(ts: pd.DataFrame, date: str, col: str = "NDVI", min_obs: int = TREND_MIN_OBS,
+                     drop: float = TREND_DROP) -> dict:
+    """Same-zone temporal comparison of one index up to `date`.
+
+    Baseline = median of the (up to) 3 observations preceding each observation of interest. Needs `min_obs` clear
+    observations, otherwise status is "insufficient" (no conclusion is invented). Statuses: insufficient | stable |
+    decline (latest below baseline by > drop) | persistent_decline (the previous observation was also below its baseline)
+    | below_earlier (no recent drop, but the latest value is > drop below the earlier peak of the period, where the peak is
+    the highest 3-observation running median before the recent window, so a single noisy image cannot set it).
+    A decline is NOT a diagnosis: harvest, cutting, growth stage and cloud residue look the same in NDVI.
+    """
+    d = ts.dropna(subset=[col]).copy() if ts is not None and not ts.empty and col in ts else pd.DataFrame()
+    if not d.empty:
+        d = d[d["date"] <= pd.Timestamp(date)].sort_values("date")
+    n = len(d)
+    out = {"n": n, "status": "insufficient", "latest": np.nan, "baseline": np.nan, "delta": np.nan, "slope_10d": np.nan,
+           "earlier_peak": np.nan, "first_date": None, "last_date": None}
+    if n:
+        out.update(first_date=d["date"].iloc[0].strftime("%Y-%m-%d"), last_date=d["date"].iloc[-1].strftime("%Y-%m-%d"))
+    if n < min_obs:
+        return out
+    vals = d[col].to_numpy(dtype=float)
+    base_last = float(np.median(vals[max(0, n - 4):n - 1]))
+    base_prev = float(np.median(vals[max(0, n - 5):n - 2]))
+    delta_last, delta_prev = vals[-1] - base_last, vals[-2] - base_prev
+    out.update(latest=float(vals[-1]), baseline=base_last, delta=float(delta_last), slope_10d=trend_slope(d, col))
+    earlier = pd.Series(vals[:max(0, n - 3)]).rolling(3, min_periods=3).median().dropna()
+    if len(earlier):
+        out["earlier_peak"] = float(earlier.max())
+    if delta_last < -drop:
+        out["status"] = "persistent_decline" if delta_prev < -drop else "decline"
+    elif np.isfinite(out["earlier_peak"]) and vals[-1] < out["earlier_peak"] - drop:
+        out["status"] = "below_earlier"
+    else:
+        out["status"] = "stable"
+    return out
 
 
 def pick_previous_date(dates: list[str], date: str, min_gap_days: int = 10) -> str | None:

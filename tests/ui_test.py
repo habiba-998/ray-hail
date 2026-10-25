@@ -5,9 +5,9 @@ Run from the project root:
     python -m tests.ui_test YOUR_PROJECT_ID # additionally real Earth Engine data
 
 Checks: every page renders without exceptions or error boxes; no technical term and no colloquial Arabic is visible;
-there is no technical mode; Earth Engine errors are never shown to the farmer; the plant-check rules
-(first suspicion / yellowing ambiguity) behave as specified; observations and field results are saved and listed
-in the farm record.
+there is no technical mode; Earth Engine errors are never shown to the farmer and never replaced by demo data;
+plant photography is absent everywhere; the status header (REAL / DEMO / UNAVAILABLE) is truthful; inspections are saved
+and listed in the field inspection log.
 """
 import os
 import re
@@ -22,7 +22,7 @@ from src.demo_data import DemoFarm
 from src.preprocessing import make_zone_grid
 
 FAIL = []
-PAGES = ["home", "map", "zones", "plant", "water", "log", "about"]
+PAGES = ["home", "map", "zones", "water", "log", "tech", "about"]
 TECH_TERMS = ["Google Earth Engine", "Earth Engine", "Sentinel", "Landsat", "ERA5", "NDVI", "NDRE", "NDMI", "LST",
               "Isolation Forest", "Random Forest", "Demo mode", "DEMO", "Cloud project", "Latitude", "Longitude",
               "AI & Method", "Fusion", "IoT", "Permission", "Technical", "earthengine", "Overview", "Analytics"]
@@ -75,11 +75,14 @@ def run_all(at, where: str) -> None:
         no_errors(at, f"{where} page {page}")
         txt = visible_text(at)
         tech = [w for w in TECH_TERMS if w in txt]
-        check(not tech, f"{where} page {page}: no technical terms visible {tech}")
+        if page != "tech":  # the technical-details page is the one place where these terms belong
+            check(not tech, f"{where} page {page}: no technical terms visible {tech}")
+        check(not at.get("file_uploader") and "تصوير" not in txt and "فحص النبات" not in txt and "photo" not in txt.lower(),
+              f"{where} page {page}: no plant-photography UI or wording")
         words = set(re.findall(r"[؀-ۿ]+", txt))
         coll = [w for w in COLLOQUIAL if w in words] + (["فيه منطقة"] if "فيه منطقة" in txt else [])
         check(not coll, f"{where} page {page}: no colloquial Arabic {coll}")
-    # irrigation page: decision support, hedged wording, shortcuts to the map / plant check
+    # irrigation page: decision support, hedged wording, shortcut to the map
     at.session_state["fpage"] = "water"
     at.run()
     txt = visible_text(at)
@@ -96,68 +99,54 @@ def run_all(at, where: str) -> None:
         no_errors(at, f"{where} irrigation → map")
         check(at.session_state["fpage"] == "map" and f" {at.session_state['zone_sel']} " in f" {btn[0].label} ",
               f"{where}: 'show on map' opens the map with the priority area selected")
-        at.session_state["fpage"] = "water"
-        at.run()
-        at.button(key="b_irr_plant").click().run()
-        no_errors(at, f"{where} irrigation → plant")
-        check(at.session_state["fpage"] == "plant", f"{where}: 'plant check' opens the plant page")
     else:
         check("لا توجد اليوم منطقة تحتاج إلى فحص الري" in txt, f"{where}: irrigation page states no area needs a check")
     at.session_state["fpage"] = "home"
     at.run()
     check("ما الذي يحتاج إلى انتباه في مزرعتي؟" in visible_text(at), f"{where}: home question in Standard Arabic")
     check("حالة مزرعتك اليوم" in visible_text(at), f"{where}: farm status summary shown")
+    check("بيانات غير كافية" in visible_text(at) and "إشارة غير طبيعية واضحة" in visible_text(at),
+          f"{where}: home counts the insufficient-data and no-clear-anomaly groups")
     at.button(key="b_prio").click().run()
     check(at.session_state["fpage"] == "zones", f"{where}: 'go to highest priority' opens the zone page")
     txt = visible_text(at)
-    for phrase in ("ما السبب المحتمل؟", "هذه النتائج مؤشرات أولية وليست تشخيصًا نهائيًا.", "ما الذي ينبغي فحصه؟",
-                   "لا تغيّر كمية الري قبل التحقق من السبب ميدانيًا."):
+    for phrase in ("لماذا ظُهرت هذه المنطقة؟", "قيم المؤشرات الحالية", "جودة البيانات", "المرجع المستخدم للمقارنة",
+                   "التفسيرات المحتملة (فرضيات وليست نتائج)", "هذه النتائج مؤشرات أولية وليست تشخيصًا نهائيًا.",
+                   "ما الذي ينبغي فحصه؟", "لا تغيّر كمية الري قبل التحقق من السبب ميدانيًا."):
         check(phrase in txt, f"{where}: zone page shows «{phrase}»")
     at.session_state["crop"] = "date_palm"
     at.run()
     check(any("سوسة النخيل الحمراء" in e.label for e in at.expander), f"{where}: crop-specific problems listed (date palm)")
-    # plant check: distinctive symptoms → specific suspicion
-    at.session_state["crop"] = "cereals"
-    at.session_state["fpage"] = "plant"
-    at.run()
-    at.checkbox(key="sym_rust_pustules").check()
-    at.checkbox(key="sym_streaks").check()
-    at.run()
-    at.button(key="b_analyze").click().run()
-    no_errors(at, f"{where} plant analyse (rust)")
-    txt = visible_text(at)
-    check("الاشتباه الأول" in txt and "قد يتوافق مع" in txt and "الصدأ المخطط" in txt, f"{where}: first suspicion 'may match' stripe rust")
-    check("هذه نتيجة أولية وليست تشخيصًا نهائيًا" in txt, f"{where}: preliminary-result disclaimer shown")
-    check("تم تشخيص" not in txt, f"{where}: never says 'diagnosed'")
-    at.button(key="b_save_obs").click().run()
-    no_errors(at, f"{where} save observation")
-    check(bool(at.session_state["plant_result"]["saved_id"]), f"{where}: observation saved to the farm record")
-    # yellowing alone → no specific disease, several causes + note
-    at.checkbox(key="sym_rust_pustules").uncheck()
-    at.checkbox(key="sym_streaks").uncheck()
-    at.checkbox(key="sym_yellowing").check()
-    at.run()
-    at.button(key="b_analyze").click().run()
-    txt = visible_text(at)
-    check("قد يتوافق مع" not in txt, f"{where}: yellowing alone does not name a specific disease")
-    check("اصفرار الأوراق قد يرتبط بعدة أسباب" in txt, f"{where}: yellowing ambiguity note shown")
-    # farm record + field validation
+    # field inspection log (non-photographic): save a record and see it listed
     at.session_state["fpage"] = "log"
     at.run()
-    no_errors(at, f"{where} farm record")
-    check(any("المنطقة" in e.label for e in at.expander), f"{where}: saved observation listed in the farm record")
-    sub = [b for b in at.button if "حفظ نتيجة التحقق" in str(b.label)]
-    check(bool(sub), f"{where}: field-validation form available in the record")
+    no_errors(at, f"{where} inspection log")
+    at.radio(key="log_cond").set_value("needs_attention")
+    at.radio(key="log_irr").set_value("yes")
+    at.multiselect(key="log_alt").set_value(["heat"])
+    at.text_area(key="log_notes").set_value("اختبار")
+    sub = [b for b in at.button if "حفظ الفحص" in str(b.label)]
+    check(bool(sub), f"{where}: inspection form available")
     if sub:
         sub[0].click().run()
-        no_errors(at, f"{where} save field result")
-        check(any("تم حفظ نتيجة التحقق" in s.value for s in at.success), f"{where}: field result saved")
+        no_errors(at, f"{where} save inspection")
+        check(any("تم حفظ الفحص" in x.value for x in at.success), f"{where}: inspection saved")
+        check(any("المنطقة" in e.label for e in at.expander), f"{where}: saved inspection listed in the log")
+        check("هذه سجلات قليلة" in visible_text(at) or "لا توجد سجلات قابلة للمقارنة" in visible_text(at),
+              f"{where}: validation summary does not overclaim from a single record")
+    # technical details page exists and states the honest model status
+    at.session_state["fpage"] = "tech"
+    at.run()
+    no_errors(at, f"{where} technical details")
+    check(any("Random Forest" in e.label for e in at.expander) and any("Isolation Forest" in e.label for e in at.expander),
+          f"{where}: technical page documents Isolation Forest and Random Forest status")
 
 
 def main(project: str | None) -> int:
     os.environ["RAY_DATA_DIR"] = tempfile.mkdtemp(prefix="ray_test_")  # never touch real farmer data
     at = new_app("demo")
     no_errors(at, "demo start")
+    check("وضع تجريبي" in visible_text(at), "demo: DEMO banner visible")
     check(at.session_state["fpage"] == "home", "app opens on the farmer home page")
     top = expected_demo_top()
     check(f"المنطقة {top}" in visible_text(at), f"demo: highest-priority zone from the pipeline shown ({top})")
@@ -165,14 +154,16 @@ def main(project: str | None) -> int:
 
     bad = new_app("earth_engine", "ray-nonexistent-project-000")
     txt = visible_text(bad)
-    check("تعذّر تحميل بيانات المزرعة حاليًا" in txt, "Earth Engine failure: plain farmer message")
+    check("البيانات الحقيقية غير متاحة" in txt, "Earth Engine failure: UNAVAILABLE status shown")
+    check("وضع تجريبي" not in txt and "المحاكاة" not in txt and "حالة مزرعتك اليوم" not in txt,
+          "Earth Engine failure: demo data is NOT silently substituted")
     check(not [w for w in TECH_TERMS if w in txt] and not bad.exception and not bad.error,
           "Earth Engine failure: no technical error or stack trace shown")
 
     if project:
         ee = new_app("earth_engine", project)
         no_errors(ee, "real-data start")
-        check("آخر صورة فضائية لمزرعتك" in visible_text(ee), "real data: satellite image date shown")
+        check("بيانات فضائية حقيقية" in visible_text(ee) and "آخر ملاحظة صالحة" in visible_text(ee), "real data: REAL status and latest valid observation date shown")
         ee.session_state["fpage"] = "map"
         ee.run()
         check(not ee.error and "تعذّر تحميل إحدى طبقات الخريطة" not in visible_text(ee), "real data: map image loads without error")

@@ -1,15 +1,16 @@
 -- RAY | رَيّ – database architecture (PostgreSQL / Supabase)
 -- -----------------------------------------------------------------------------------------------
 -- Status in this version:
---   * ACTIVE (written by the app when Supabase is configured): field_observations, field_validations
---     (+ Storage bucket "farmer-images"). Locally the same two tables live in SQLite (src/storage.py).
+--   * ACTIVE (written by the app when Supabase is configured): field_observations (non-photographic
+--     field-inspection records). Locally the same table lives in SQLite (src/storage.py).
+--     Existing databases: apply db/migrations/2026-10_inspection_log.sql (adds columns, deletes nothing).
 --   * READY (schema only, filled later): users, farms, zones, crops, crop_growth_stages, diseases, pests,
---     disease_images, farmer_images, satellite_observations, weather_observations, iot_devices,
+--     disease_images, satellite_observations, weather_observations, iot_devices,
 --     iot_observations, analysis_results, data_sources.
 --   Reference data for crops/diseases/pests/images/sources currently live in data/knowledge/*.json
 --   and can be loaded into these tables without changing their structure.
 --
--- Apply in Supabase: SQL Editor → paste this file → Run. Then Storage → create a PRIVATE bucket "farmer-images".
+-- Apply in Supabase: SQL Editor → paste this file → Run. No Storage bucket is needed (plant photography was removed).
 -- The app uses the service key server-side only; RLS is enabled with no public policies, so anonymous
 -- browser clients cannot read farmer data.
 -- -----------------------------------------------------------------------------------------------
@@ -159,64 +160,37 @@ create table if not exists analysis_results (
   created_at      timestamptz default now()
 );
 
--- ACTIVE: written by the app (src/storage.py)
+-- ACTIVE: written by the app (src/storage.py). Non-photographic field-inspection records.
+-- These are user-entered notes, NOT verified ground truth. Used to compare satellite flags with the field (src/validation.py).
 create table if not exists field_observations (
   id                 uuid primary key default gen_random_uuid(),
   created_at         timestamptz default now(),
   session_id         text,                          -- random per browser session (no personal data)
   farm_id            text,
   farm_name          text,
-  data_mode          text,                          -- 'real' | 'demo'
+  data_mode          text,                          -- 'real' | 'demo'  (demo records must never be used for validation)
   zone_id            text,
   crop_id            text,
-  satellite_date     date,
-  satellite_class    text,
-  satellite_score    numeric,
+  satellite_date     date,                          -- date of the satellite image the flag came from
+  satellite_class    text,                          -- HIGH | MODERATE | HEALTHY | NO_CROP | NO_DATA at that time
+  satellite_score    numeric,                       -- heuristic priority index 0-1 (NOT a probability)
   lat                double precision,              -- zone centre (not the user's GPS)
   lon                double precision,
-  symptoms           jsonb,
-  soil_condition     text,
-  spread             text,
-  photo_path         text,                          -- path in the private Storage bucket
-  photo_screening    jsonb,
-  possible_causes    jsonb,
-  candidate_problems jsonb,
+  inspection_date    date,
+  condition          text,                          -- needs_attention | no_problem | not_sure
+  irrigation_issue   text,                          -- yes | no | not_checked
+  alt_causes         jsonb,                         -- heat, salinity, disease, pest, nutrient, harvest, growth_stage, other
+  soil_moisture_pct  numeric,                       -- optional measurement
+  inspector          text,                          -- optional free text (name or role)
   notes              text
 );
 
-create table if not exists farmer_images (
-  id              uuid primary key default gen_random_uuid(),
-  observation_id  uuid references field_observations(id) on delete cascade,
-  storage_path    text not null,
-  exif_removed    boolean default true,
-  created_at      timestamptz default now()
-);
-
--- ACTIVE: ground truth for future calibration / supervised learning
-create table if not exists field_validations (
-  id                 uuid primary key default gen_random_uuid(),
-  created_at         timestamptz default now(),
-  session_id         text,
-  observation_id     uuid references field_observations(id) on delete cascade,
-  ray_prediction     text,                          -- top cause RAY suggested (e.g. 'water')
-  field_check        text,                          -- e.g. 'soil_dry' | 'soil_not_dry' | 'not_checked'
-  actual_cause       text,                          -- water / heat / disease / pest / nutrient / other / none
-  actual_problem_id  text,                          -- diseases.id / pests.id when identified
-  action_taken       text,                          -- what the farmer did (repair, irrigation change, treatment …)
-  notes              text
-);
-
-create index if not exists idx_obs_session on field_observations(session_id, created_at desc);
-create index if not exists idx_obs_farm_zone on field_observations(farm_id, zone_id);
-create index if not exists idx_val_obs on field_validations(observation_id);
 create index if not exists idx_sat_farm_date on satellite_observations(farm_id, acquired_on);
 create index if not exists idx_wx_farm_date on weather_observations(farm_id, observed_on);
 create index if not exists idx_iot_dev_time on iot_observations(device_id, observed_at);
 
 -- Row Level Security: on, with no public policies (the app writes with the server-side service key).
 alter table field_observations enable row level security;
-alter table field_validations  enable row level security;
-alter table farmer_images      enable row level security;
 alter table users              enable row level security;
 alter table farms              enable row level security;
 alter table zones              enable row level security;

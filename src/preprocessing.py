@@ -88,6 +88,7 @@ def landsat_lst_prepare(img):
     qa = img.select("QA_PIXEL")
     clear = (
         qa.bitwiseAnd(1 << 1).eq(0)  # dilated cloud
+        .And(qa.bitwiseAnd(1 << 2).eq(0))  # cirrus (high confidence)
         .And(qa.bitwiseAnd(1 << 3).eq(0))  # cloud
         .And(qa.bitwiseAnd(1 << 4).eq(0))  # cloud shadow
     )

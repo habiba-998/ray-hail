@@ -1,7 +1,7 @@
 """Evidence fusion: which causes are CONSISTENT with the available evidence for a zone?
 
 Inputs (all optional except the zone): satellite rule points (existing RAY rules), Isolation-Forest unusual-pixel
-share, recent weather (ERA5-Land / NCM), crop, the farmer's symptom answers, and the colour screening of a photo.
+share, recent weather (ERA5-Land / NCM), crop and the user's optional field answers (symptoms, soil, spread).
 
 Output: for each cause category an evidence score, a qualitative level (strong / moderate / weak / none) and the list
 of reasons that produced it. This is a transparent, rule-based prototype:
@@ -43,11 +43,6 @@ SYMPTOM_WEIGHTS = {
     "root_rot": {"disease": 2, "other": 1},
     "fruit_damage": {"pest": 1, "disease": 1},
 }
-PHOTO_WEIGHTS = {
-    "photo_yellow": {"nutrient": 1, "water": 1},
-    "photo_brown": {"water": 1, "disease": 1},
-    "photo_dark_spots": {"disease": 1},
-}
 REASONS = {
     "sat_ndmi": ("Satellite moisture signal is low", "إشارة الرطوبة من القمر الصناعي منخفضة"),
     "sat_lst": ("Area is warmer than the farm average (satellite)", "المنطقة أدفأ من متوسط المزرعة (قمر صناعي)"),
@@ -74,7 +69,7 @@ def _add(scores, reasons, cause, pts, reason_key, **fmt):
 
 def possible_causes(zone: dict, *, weather: dict | None = None, anomaly_share: float | None = None,
                     contamination: float = 0.05, symptoms: list[str] | None = None, soil: str | None = None,
-                    spread: str | None = None, photo: dict | None = None) -> list[dict]:
+                    spread: str | None = None) -> list[dict]:
     scores: dict[str, int] = {c: 0 for c in CAUSES}
     reasons: dict[str, list] = {}
     rp = {k: v[0] for k, v in zone.get("rules", {}).items()}
@@ -123,12 +118,6 @@ def possible_causes(zone: dict, *, weather: dict | None = None, anomaly_share: f
         _add(scores, reasons, "water", 1, "spread_many")
         _add(scores, reasons, "heat", 1, "spread_many")
 
-    # --- photo colour screening ---
-    if photo and photo.get("ok"):
-        for sig in photo.get("signals", []):
-            for cause, pts in PHOTO_WEIGHTS[sig].items():
-                _add(scores, reasons, cause, pts, f"photo:{sig}")
-
     out = []
     for cause, meta in CAUSES.items():
         s = max(scores[cause], 0)
@@ -143,41 +132,5 @@ def reason_text(reason: tuple, ar: bool) -> str:
     if key.startswith("sym:"):
         v = knowledge.symptom_vocabulary()[key[4:]]
         return ("لاحظت: " + v["ar"]) if ar else ("You observed: " + v["en"].lower())
-    if key.startswith("photo:"):
-        t = {"photo_yellow": ("Photo: a lot of yellow tissue", "الصورة: نسبة كبيرة من الأنسجة الصفراء"),
-             "photo_brown": ("Photo: a lot of brown / dry tissue", "الصورة: نسبة كبيرة من الأنسجة البنية أو الجافة"),
-             "photo_dark_spots": ("Photo: dark spots", "الصورة: بقع داكنة")}[key[6:]]
-        return t[1] if ar else t[0]
     en, a = REASONS[key]
     return (a if ar else en).format(**fmt)
-
-
-def matching_problems(crop_id: str, symptoms: list[str] | None) -> list[dict]:
-    """Crop-specific diseases/pests whose documented visual symptoms overlap with what the farmer observed."""
-    sym = set(symptoms or [])
-    ranked = []
-    for p in knowledge.problems_for(crop_id):
-        hits = sym & set(p["visual_tags"])
-        if hits:
-            ranked.append({"problem": p, "matches": sorted(hits), "n": len(hits)})
-    return sorted(ranked, key=lambda r: -r["n"])
-
-
-# Symptoms with many possible causes (water, heat, nutrients, salinity, disease, pests). On their own they are never
-# enough to point to a specific disease or pest.
-AMBIGUOUS_TAGS = {"yellowing", "wilting", "leaf_curl"}
-
-
-def specific_suspicions(crop_id: str, symptoms: list[str] | None) -> list[dict]:
-    """Crop problems whose documented symptoms overlap with at least one DISTINCTIVE symptom the farmer reported.
-
-    Suspicion level from the number of overlapping symptoms: 1 → weak, 2 → moderate, ≥3 → strong.
-    A preliminary match, never a diagnosis.
-    """
-    out = []
-    for m in matching_problems(crop_id, symptoms):
-        if not set(m["matches"]) - AMBIGUOUS_TAGS:
-            continue
-        lv = "strong" if m["n"] >= 3 else "moderate" if m["n"] == 2 else "weak"
-        out.append({**m, "level": lv, "level_ar": {"strong": "مرتفعة", "moderate": "متوسطة", "weak": "منخفضة"}[lv]})
-    return out

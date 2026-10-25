@@ -7,7 +7,6 @@ textColor = "#1F2D27"
 
 [server]
 headless = true
-maxUploadSize = 12
 
 [browser]
 gatherUsageStats = false

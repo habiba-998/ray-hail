@@ -1,18 +1,14 @@
-"""Unit checks for the knowledge base, evidence fusion, photo screening, storage and weather summary.
+"""Unit checks for the knowledge base, evidence fusion, storage and weather summary.
 
 Run from the project root:  python -m tests.core_test
-Synthetic images below are TEST FIXTURES only (solid colours) – they are never shown to users.
 """
-import io
 import sys
 import tempfile
 from pathlib import Path
 
 import pandas as pd
-from PIL import Image
 
 from src import fusion, knowledge, weather
-from src.image_analysis import ANALYZER, prepare_for_storage
 from src.storage import SQLiteStore
 
 FAIL = []
@@ -22,19 +18,6 @@ def check(cond, msg):
     print(("PASS " if cond else "FAIL ") + msg)
     if not cond:
         FAIL.append(msg)
-
-
-def img_bytes(color, size=(400, 300), exif_gps=False):
-    im = Image.new("RGB", size, color)
-    buf = io.BytesIO()
-    if exif_gps:
-        ex = Image.Exif()
-        ex[0x8825] = {1: "N", 2: (27.0, 24.0, 0.0)}  # GPSInfo
-        ex[0x010F] = "TestCamera"
-        im.save(buf, format="JPEG", exif=ex)
-    else:
-        im.save(buf, format="PNG")
-    return buf.getvalue()
 
 
 def zone(points: dict, cls="HIGH"):
@@ -63,36 +46,28 @@ def main() -> int:
     check(hot[0]["cause"] == "heat", "hot weather adds heat-stress evidence")
     none = fusion.possible_causes(zone({}, "HEALTHY"))
     check(all(x["level"] == "none" for x in none), "no evidence → 'no evidence yet' for every cause")
-    m = fusion.matching_problems("cereals", ["rust_pustules", "streaks"])
-    check(bool(m) and m[0]["problem"]["id"] == "stripe_rust", "symptom matching finds stripe rust for pustules + streaks")
     check(all("%" not in fusion.reason_text(x, True) or "رطوبة" in fusion.reason_text(x, True)
               for c in r for x in c["reasons"]), "reasons render in Arabic")
-
-    # --- photo screening ---
-    g = ANALYZER.analyze(img_bytes((40, 140, 50)))
-    check(g["ok"] and g["green_share"] > 0.9 and not g["signals"], "green leaf colour → no warning signals")
-    y = ANALYZER.analyze(img_bytes((215, 190, 40)))
-    check(y["ok"] and "photo_yellow" in y["signals"], "yellow tissue → photo_yellow signal")
-    check(not ANALYZER.analyze(img_bytes((40, 140, 50), size=(100, 80)))["ok"], "too-small photo rejected")
-    check(not ANALYZER.analyze(img_bytes((5, 5, 5)))["ok"], "too-dark photo rejected")
-    check(not ANALYZER.analyze(b"not an image")["ok"], "unreadable file rejected")
-    clean = prepare_for_storage(img_bytes((40, 140, 50), exif_gps=True))
-    ex = Image.open(io.BytesIO(clean)).getexif()
-    check(0x8825 not in ex and 0x010F not in ex, "EXIF (GPS, camera) removed before storage")
 
     # --- storage (SQLite) ---
     with tempfile.TemporaryDirectory() as d:
         st = SQLiteStore(Path(d))
-        oid = st.save_observation({"session_id": "s1", "zone_id": "A4", "crop_id": "fodder", "symptoms": ["wilting"],
-                                   "possible_causes": [{"cause": "water", "score": 5, "level": "strong"}]}, clean)
-        st.save_observation({"session_id": "s2", "zone_id": "B1"}, None)
+        base = {"session_id": "s1", "zone_id": "A4", "crop_id": "fodder", "inspection_date": "2026-10-01",
+                "condition": "needs_attention", "irrigation_issue": "yes", "alt_causes": ["heat"], "soil_moisture_pct": 12.5}
+        oid = st.save_observation(base)
+        st.save_observation({**base, "session_id": "s2", "zone_id": "B1", "condition": "no_problem", "irrigation_issue": "no",
+                             "alt_causes": None, "soil_moisture_pct": None})
         rows = st.list_observations("s1")
-        check(len(rows) == 1 and rows[0]["id"] == oid and rows[0]["symptoms"] == ["wilting"], "observation saved and read back (JSON fields)")
-        check(st.get_image(rows[0]["photo_path"]) == clean, "photo stored and retrievable")
-        check(len(st.list_observations("s2")) == 1 and all(r["session_id"] == "s1" for r in rows), "sessions only see their own observations")
-        st.save_validation({"session_id": "s1", "observation_id": oid, "ray_prediction": "water", "field_check": "soil_not_dry", "actual_cause": "pest"})
-        check(len(st.list_validations([oid])) == 1, "field validation saved and linked")
-        check(st.counts() == {"observations": 2, "validations": 1, "photos": 1}, f"counts {st.counts()}")
+        check(len(rows) == 1 and rows[0]["id"] == oid and rows[0]["alt_causes"] == ["heat"] and rows[0]["soil_moisture_pct"] == 12.5,
+              "inspection saved and read back (JSON + numeric fields)")
+        check(len(st.list_observations("s2")) == 1 and all(r["session_id"] == "s1" for r in rows), "sessions only see their own records")
+        for bad in ({**base, "condition": "x"}, {**base, "soil_moisture_pct": 140}, {**base, "zone_id": ""}, {**base, "alt_causes": ["ufo"]}):
+            try:
+                st.save_observation(bad)
+                check(False, f"invalid record rejected {bad}")
+            except ValueError:
+                check(True, "invalid inspection record rejected")
+        check(st.counts() == {"observations": 2}, f"counts {st.counts()}")
 
     # --- weather summary ---
     df = pd.DataFrame({"date": pd.date_range("2026-09-15", periods=10), "air_temp_c": 33.0, "air_temp_max_c": 41.0,
