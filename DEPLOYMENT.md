@@ -61,44 +61,42 @@ If step 4 says key creation is disabled by an organisation policy, stop and use 
 
 Open the URL on your phone:
 
-- [ ] Green badge **"Google Earth Engine — Real Satellite Data · Sentinel-2 image of …"**
-- [ ] Farmer mode: Farm Status, Today's Priority, map with coloured zones, tap a zone, View details
-- [ ] العربية / English switch
-- [ ] Technical mode: Satellite Map layers, Analytics, AI & Method (Random Forest shows NOT TRAINED)
-- [ ] Sidebar (») → Data source → Demo mode shows the yellow **DEMO DATA** badge
+- [ ] Header shows **"بيانات فضائية حقيقية · آخر ملاحظة صالحة: <date> (قبل N يومًا)"**
+- [ ] Home: zone counts (inspection / follow-up / no clear signal / insufficient data) and the next action
+- [ ] Map with coloured zones and the grid note; tap a zone; zone details show values, data quality, reference, trend
+- [ ] No plant-photo page or upload control anywhere
+- [ ] Technical details page: Random Forest shows "not trained"
+- [ ] If credentials are wrong the app shows the red "البيانات الحقيقية غير متاحة" status, never demo data
 
 The first real-data load after a restart takes roughly 30–60 s; afterwards results are cached for an hour.
 
 ## Operating notes
 
-- **Latest image by default.** The app always opens on the newest Sentinel-2 acquisition over the farm that is at
-  least 50 % cloud-free. Results change as new images arrive; the date selector (sidebar) shows earlier dates.
+- **Latest image by default.** The app always opens on the newest Sentinel-2 acquisition over the farm (last 150 days)
+  that is at least 50 % cloud-free. Results change as new images arrive.
 - **Sleep.** Community Cloud puts apps to sleep after a period without visitors. A reviewer then sees a *wake up*
   button and waits about a minute. Open the URL yourself shortly before review windows.
 - **Quota.** Visitors use the Earth Engine quota of `ray-hail-2026` (noncommercial projects have a monthly compute
   quota). Check it under Google Cloud Console → Earth Engine → Quota.
-- **Project field is locked** on the deployment (service account configured) so that no visitor can re-point the
-  shared Earth Engine connection.
 - **Updating the app:** commit and `git push`; Community Cloud redeploys automatically.
 
-## Optional · Permanent storage for farmer observations (Supabase)
+## Optional · Permanent storage for field-inspection records (Supabase)
 
-Without this, observations and photos are kept in a local SQLite file on the Streamlit server and are **lost when the
-app restarts** (the app tells users so). To keep them:
+Without this, inspection records are kept in a local SQLite file on the Streamlit server and are **lost when the app
+restarts** (the app tells users so). To keep them:
 
-1. Create a Supabase project (free tier is enough for a pilot).
-2. SQL Editor → paste `db/schema.sql` → Run.
-3. Storage → create a **private** bucket named `farmer-images`.
-4. Streamlit Cloud → App settings → Secrets → add (values from Supabase → Project settings → API):
+1. Create a Supabase project.
+2. SQL Editor → paste `db/schema.sql` → Run. If the tables already exist from the earlier (photo) schema, run
+   `db/migrations/2026-10_inspection_log.sql` instead; it only adds columns.
+3. Streamlit Cloud → App settings → Secrets → add (values from Supabase → Project settings → API):
 
    ```toml
    [supabase]
    url = "https://<project-ref>.supabase.co"
    service_key = "<service_role key>"   # server-side only; never commit it
-   bucket = "farmer-images"
    ```
 
-5. Reboot the app. Technical → Data & IoT then shows "Supabase (Postgres + Storage)" as the backend.
+4. Reboot the app.
 
-Row Level Security is enabled with no public policies, so browsers cannot read farmer data directly; only the app
+Row Level Security is enabled with no public policies, so browsers cannot read the records directly; only the app
 (server-side, with the service key) can.

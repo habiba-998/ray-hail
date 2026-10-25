@@ -25,6 +25,7 @@ html, body, [class*="css"] {{ font-family: 'Inter', 'IBM Plex Sans Arabic', 'Seg
 .topbar .sub {{ color:{MUTED}; font-size:1rem; margin-top:3px; }}
 .databadge {{ border-radius:12px; padding:8px 14px; font-weight:500; font-size:.92rem; margin:8px 0 4px 0; }}
 .databadge.real {{ background:{GREEN_LIGHT}; border:1px solid {LINE}; color:{GREEN_DARK}; }}
+.databadge.unavailable {{ background:#FDE7E6; border:2px solid #D64541; color:#7A1F1B; font-weight:700; }}
 .databadge.demo {{ background:#FFF6DD; border:2px solid #E8B21E; color:#6B4A00; font-weight:700; }}
 
 /* ---------- controls: large touch targets ---------- */
@@ -33,7 +34,6 @@ div.stButton > button[kind="primary"] {{ background:{GREEN}; border-color:{GREEN
 div.stButton > button[kind="primary"]:hover {{ background:{GREEN_DARK}; border-color:{GREEN_DARK}; }}
 [data-testid="stButtonGroup"] button {{ min-height:46px; font-size:1rem; }}
 [data-testid="stSelectbox"] div[data-baseweb="select"] > div {{ min-height:48px; font-size:1.02rem; }}
-[data-testid="stFileUploaderDropzone"] {{ min-height:120px; border:2px dashed {GREEN}; background:{GREEN_LIGHT}; border-radius:16px; }}
 [data-testid="stCheckbox"] label p {{ font-size:1.05rem; }}
 
 /* ---------- farmer cards ---------- */

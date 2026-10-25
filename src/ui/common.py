@@ -1,7 +1,5 @@
-"""Helpers shared by Farmer and Technical modes: cached data access, formatting, zone picker, map, limitations.
-
-The cached wrappers call the unchanged functions in src.data_acquisition; they were moved here from app.py so
-both modes reuse the same cache (switching mode never recomputes the analysis).
+"""Helpers shared by the farmer pages and the technical-details page: cached data access, formatting, zone picker, map,
+limitations. The cached wrappers call the functions in src.data_acquisition (moved here from app.py).
 """
 from __future__ import annotations
 
@@ -315,8 +313,6 @@ LIMITATIONS: list[tuple[str, str]] = [
      "العناصر أو الملوحة أو الحصاد/الحش أو مرحلة نمو المحصول."),
     ("The 'possible causes' ranking is a transparent rule-based fit with the available evidence, not a probability and "
      "not a diagnosis.", "ترتيب «الأسباب المحتملة» توافق مبني على قواعد واضحة مع الدلائل المتوفرة، وليس احتمالًا ولا تشخيصًا."),
-    ("The photo check measures colours only (green / yellow / brown). It is not a trained disease classifier and has "
-     "no measured accuracy.", "فحص الصورة يقيس الألوان فقط (أخضر/أصفر/بني)، وليس نموذجًا مدرّبًا لتشخيص الأمراض وليس له دقة مقاسة."),
     ("Crop-specific calibration is still required; thresholds are the same for all crops in this version.",
      "ما زالت المعايرة حسب المحصول مطلوبة؛ العتبات نفسها لكل المحاصيل في هذه النسخة."),
     ("No supervised model is trained yet because there are not enough labelled field observations. Field results "
@@ -330,4 +326,9 @@ LIMITATIONS: list[tuple[str, str]] = [
      "رادار Sentinel-1 يُعرض كسياق فقط ولا يدخل في التقييم (لا توجد معايرة محلية)."),
     ("No IoT sensors are connected in this version.", "لا توجد حساسات (IoT) متصلة في هذه النسخة."),
     ("Field validation is required before relying on the results.", "يلزم التحقق الميداني قبل الاعتماد على النتائج."),
+    ("Landsat surface temperature is a ±12-day composite at 100 m: it is not simultaneous with the Sentinel-2 image and "
+     "not directly comparable with the 20 m indices.",
+     "حرارة سطح Landsat وسيط لصور ±١٢ يومًا بدقة ١٠٠ م: لا تتزامن مع صورة Sentinel-2 ولا تقارَن مباشرة بمؤشرات ٢٠ م."),
+    ("Field-inspection records are typed notes, not verified ground truth.",
+     "سجلات الفحص الميداني ملاحظات مكتوبة وليست حقيقة ميدانية موثّقة."),
 ]

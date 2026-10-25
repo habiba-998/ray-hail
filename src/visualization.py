@@ -36,7 +36,7 @@ def build_map(
     attribution: str = "",
     labels: dict[str, str] | None = None,
     label_px: int = 11,
-    tooltip_aliases: tuple[str, str, str] = ("Zone", "Status", "Stress score %"),
+    tooltip_aliases: tuple[str, str, str] = ("Zone", "Status", "Indicators flagged"),
     class_labels: dict[str, str] | None = None,
     basemap_attr: str = "Basemap: Esri World Imagery",
 ) -> folium.Map:
@@ -60,8 +60,10 @@ def build_map(
             attribution=attribution,
         ).add_to(m)
 
-    gj = zone_geojson(zones.assign(label=zones.cls.map(class_labels or CLASS_LABELS), score_pct=(zones.score * 100).round(0)),
-                      ["cls", "label", "score_pct"])
+    flagged = (zones.n_flagged.astype("Int64").astype(str) + " / " + zones.n_signals.astype("Int64").astype(str)
+               if {"n_flagged", "n_signals"} <= set(zones.columns) else "—")
+    gj = zone_geojson(zones.assign(label=zones.cls.map(class_labels or CLASS_LABELS), signals=flagged),
+                      ["cls", "label", "signals"])
 
     def style(feat):
         p = feat["properties"]
@@ -78,7 +80,7 @@ def build_map(
         name="Zones",
         style_function=style,
         highlight_function=lambda f: {"weight": 3, "color": "#FFFFFF"},
-        tooltip=folium.GeoJsonTooltip(fields=["zone_id", "label", "score_pct"], aliases=list(tooltip_aliases)),
+        tooltip=folium.GeoJsonTooltip(fields=["zone_id", "label", "signals"], aliases=list(tooltip_aliases)),
     ).add_to(m)
     for z in zones.itertuples(index=False):
         text = (labels or {}).get(z.zone_id, z.zone_id)

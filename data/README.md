@@ -13,6 +13,7 @@ The supervised Random Forest is **only** trained if you add real field labels:
    that date/location (e.g. exported from the RAY zone table in Earth Engine mode)
    and a `label` from real observation, e.g. `stressed` / `not_stressed`
    (soil-moisture probe, agronomist visual score, irrigation fault log …).
+   Inspection-log records typed into the app are NOT verified labels unless the collection procedure is documented.
 3. Describe how each label was obtained in `source_notes`.
 
 Training code in `src/ml.py` needs ≥ 30 rows, ≥ 2 classes and ≥ 5 rows per class.

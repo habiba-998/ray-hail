@@ -5,9 +5,13 @@
    statistically unusual compared with the rest of the farm on the same date.
    "Unusual" is not the same as "water stressed"; it is a pointer for inspection.
 
-2. Supervised Random Forest -- ONLY trained if real ground-truth labels exist in
-   data/ground_truth/labels.csv. No labels are shipped with this prototype, so
-   by default the model is reported as NOT TRAINED. We do not fabricate labels.
+   Reference population: the cropped pixels sampled from THIS farm on THIS date, so the output is relative to the
+   farm itself. `contamination` fixes the share of pixels flagged (a model setting, not a finding); the output is a
+   secondary hint and is never a probability of water stress nor an explanation of the cause.
+
+2. Supervised Random Forest -- NOT ACTIVE. It is not called by the application. train_random_forest() is a stub for
+   future use that only runs if real ground-truth labels exist in data/ground_truth/labels.csv. No labels are
+   shipped, so the model is NOT TRAINED and no accuracy exists. We do not fabricate labels.
 """
 from __future__ import annotations
 
@@ -18,6 +22,8 @@ import pandas as pd
 from sklearn.ensemble import IsolationForest, RandomForestClassifier
 from sklearn.model_selection import StratifiedKFold, cross_val_score
 from sklearn.preprocessing import StandardScaler
+
+from .config import MIN_ZONE_PIXELS
 
 LABELS_PATH = Path(__file__).resolve().parents[1] / "data" / "ground_truth" / "labels.csv"
 CANDIDATE_FEATURES = ["ndvi", "ndre", "ndmi", "lst", "dndvi", "air_temp_c", "precip_mm"]
@@ -49,10 +55,15 @@ def assign_zones(pix: pd.DataFrame, zones: pd.DataFrame) -> pd.DataFrame:
     return pix.assign(zone_id=zid).dropna(subset=["zone_id"])
 
 
-def anomaly_share_by_zone(pix: pd.DataFrame, zones: pd.DataFrame) -> pd.Series:
+def anomaly_share_by_zone(pix: pd.DataFrame, zones: pd.DataFrame, min_pixels: int = MIN_ZONE_PIXELS) -> pd.Series:
+    """Share of sampled pixels flagged as unusual, per zone. Zones with fewer than `min_pixels` samples get NaN
+    (too few samples for a meaningful share). Because contamination is fixed, ~IF_CONTAMINATION of ALL pixels are
+    flagged by construction; only zones well above that expected share carry information."""
     if pix.empty:
         return pd.Series(dtype=float)
-    return assign_zones(pix, zones).groupby("zone_id")["anomaly"].mean()
+    g = assign_zones(pix, zones).groupby("zone_id")["anomaly"]
+    share, n = g.mean(), g.size()
+    return share.where(n >= min_pixels)
 
 
 def supervised_status() -> dict:

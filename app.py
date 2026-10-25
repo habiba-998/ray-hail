@@ -6,8 +6,10 @@ Farmer-only interface. Structure:
                    project is configured) -> zone statistics -> rule-based classes -> Isolation Forest share
   * presentation – src/ui/farmer.py (Arabic, plain language)
 
-The former technical dashboard (src/ui/technical.py) is kept in the code base for developers but is not reachable
-from the interface. Technical details are documented in README.md.
+Technical details for advanced users live on the "Technical details" page (src/ui/details.py) and in README.md.
+
+Data status is always explicit (src/status.py): REAL (Earth Engine), DEMO (simulated; only when no Earth Engine
+credentials are configured) or UNAVAILABLE (retrieval failed / insufficient data -> nothing is shown, never demo data).
 """
 from __future__ import annotations
 
@@ -47,7 +49,7 @@ def _refresh_stale_project_modules() -> None:
 
 _refresh_stale_project_modules()
 
-from src import analysis, ml  # noqa: E402  (imported after the stale-module refresh above)
+from src import analysis, ml, status  # noqa: E402  (imported after the stale-module refresh above)
 from src import weather as wxmod
 from src.config import AOI, AOI_PRESETS, DEFAULT_PRESET, Thresholds
 from src.preprocessing import make_zone_grid
@@ -96,9 +98,14 @@ def _service_account_json() -> str | None:
 
 
 def friendly_stop(detail: object) -> None:
-    """Log the technical cause for developers; show the farmer a plain message only."""
+    """UNAVAILABLE state: log the technical cause for developers; show the user a plain, category-specific message.
+
+    The app never substitutes demo data here.
+    """
     log.warning("RAY data loading failed: %s", detail)
-    st.markdown(f"<div class='card soft'>⚠️ {t('load_failed')}</div>", unsafe_allow_html=True)
+    msg = status.FAILURE_MESSAGES_AR[status.classify_failure(detail)]
+    st.markdown(f"<div class='databadge unavailable'>⛔ {t('st_unavailable')}</div>"
+                f"<div class='card soft'>⚠️ {msg}</div>", unsafe_allow_html=True)
     if st.button(t("btn_retry"), key="b_retry"):
         ee_connect.clear()
         st.cache_data.clear()
@@ -117,7 +124,7 @@ if sa_json and not project:
     except Exception:  # noqa: BLE001
         pass
 project = st.session_state.get("_ee_project_override", project)  # test hook only
-st.session_state.setdefault("source", EE_SRC if project or sa_json else DEMO_SRC)
+st.session_state.setdefault("source", EE_SRC if status.choose_source(project, sa_json) == "earth_engine" else DEMO_SRC)
 use_ee = st.session_state.source == EE_SRC
 
 preset = st.session_state.farm if st.session_state.farm in FARMS else DEFAULT_PRESET
@@ -237,9 +244,12 @@ ctx = Ctx(
 # Farmer interface
 # ---------------------------------------------------------------------------
 if use_ee:
-    st.markdown(f"<div class='databadge real'>📅 {t('image_date', date=date)}</div>", unsafe_allow_html=True)
+    fr = status.freshness(date)
+    st.markdown(f"<div class='databadge real'>🛰️ {t('st_real')} · {t('latest_obs', date=date, n=fr.age_days)}</div>", unsafe_allow_html=True)
+    if fr.stale:
+        st.markdown(f"<div class='databadge demo'>⚠️ {t('stale_note')}</div>", unsafe_allow_html=True)
 else:
-    st.markdown(f"<div class='databadge demo'>⚠️ {t('demo_note')}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='databadge demo'>⚠️ {t('demo_banner')}</div>", unsafe_allow_html=True)
 synced_control("nav", farmer.PAGES, "fpage", farmer.nav_labels().get)
 farmer.render(ctx)
 

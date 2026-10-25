@@ -1,7 +1,7 @@
 """Farmer interface – the only interface of RAY (Arabic, plain language, no technical terms).
 
-Journey: Home (what needs attention?) → Map (where?) → Zones (likely cause? what to check?) → Plant check (photo →
-preliminary suspicion) → Irrigation (decide after verifying) → Farm record → About.
+Journey: Home (what needs attention?) → Map (where?) → Zones (evidence, alternatives, what to check) → Irrigation
+(decide after verifying) → Field inspection log (optional, non-photographic) → Technical details → About.
 
 All statuses come from the existing pipeline (`c.scored` from analysis.score_zones); causes from src/fusion.py;
 crop facts from src/knowledge.py. Nothing technical (data sources, indices, algorithms, IDs) is shown here.
@@ -11,13 +11,12 @@ from __future__ import annotations
 import datetime as dt
 import logging
 
-import numpy as np
 import pandas as pd
 import streamlit as st
 
-from .. import analysis, fusion, knowledge, ml
-from ..config import CLASS_COLORS
-from ..image_analysis import ANALYZER, prepare_for_storage
+from .. import analysis, fusion, knowledge, ml, storage, validation
+from ..config import CLASS_COLORS, TREND_MIN_OBS
+from . import details
 from .common import (ANOMALY_NOTE_FACTOR, Ctx, anomaly_watch, ee_ts, finite, fmt, priority_zones, render_farm_map, synced_control,
                      synced_select, zone_row)
 from .i18n import area_noun, count_areas, is_ar, ltr, t, tr
@@ -25,9 +24,8 @@ from .i18n import area_noun, count_areas, is_ar, ltr, t, tr
 ICON = {"HIGH": "‼", "MODERATE": "!", "HEALTHY": "✓", "NO_CROP": "–", "NO_DATA": "?"}
 EMOJI = {"HIGH": "🔴", "MODERATE": "🟡", "HEALTHY": "🟢", "NO_CROP": "⚪", "NO_DATA": "⚫"}
 TEXT_COLOR = {"HIGH": "#A12F2B", "MODERATE": "#7A5600", "HEALTHY": "#1E5B38", "NO_CROP": "#5E6E66", "NO_DATA": "#5E6E66"}
-PAGES = ["home", "map", "zones", "plant", "water", "log", "about"]
+PAGES = ["home", "map", "zones", "water", "log", "tech", "about"]
 log = logging.getLogger("ray")
-ACTIONS = ["act_none", "act_fix", "act_water", "act_treat", "act_expert", "act_other"]
 
 
 # ---------------------------------------------------------------------------
@@ -152,13 +150,17 @@ def choose_zone(c: Ctx, label: str | None = None) -> dict:
 def page_home(c: Ctx) -> None:
     question(t("q_home"))
     counts = c.scored.cls.value_counts()
-    n_r, n_m, n_h = counts.get("HIGH", 0), counts.get("MODERATE", 0), counts.get("HEALTHY", 0)
+    n = {k: int(counts.get(k, 0)) for k in ("HIGH", "MODERATE", "HEALTHY", "NO_DATA", "NO_CROP")}
+    period = t("period", a=ltr(c.start), b=ltr(c.end)) if c.use_ee else t("latest_obs_demo", date=c.date)
+    nocrop = list(c.scored.loc[c.scored.cls == "NO_CROP", "zone_id"])
     st.markdown(
         f"<div class='card'><div class='section-title' style='margin-top:0'>{t('today_status')}</div>"
-        f"<div class='status-line'>🔴 {count_areas(n_r, 'check')}</div>"
-        f"<div class='status-line'>🟡 {count_areas(n_m, 'watch')}</div>"
-        f"<div class='status-line'>🟢 {count_areas(n_h, 'ok')}</div>"
-        f"<div class='muted' style='margin-top:6px'>{t('farm')}: {c.farm_name}</div></div>",
+        f"<div class='status-line'>🔴 {count_areas(n['HIGH'], 'check')}</div>"
+        f"<div class='status-line'>🟡 {count_areas(n['MODERATE'], 'watch')}</div>"
+        f"<div class='status-line'>🟢 {count_areas(n['HEALTHY'], 'ok')}</div>"
+        f"<div class='status-line'>⚫ {count_areas(n['NO_DATA'], 'nodata')}</div>"
+        + (f"<div class='muted'>⚪ {t('n_nocrop', z='، '.join(nocrop))}</div>" if nocrop else "")
+        + f"<div class='muted' style='margin-top:6px'>{t('farm')}: {c.farm_name} · {period}</div></div>",
         unsafe_allow_html=True,
     )
     prio = priority_zones(c)
@@ -171,6 +173,8 @@ def page_home(c: Ctx) -> None:
         others = list(prio.iloc[1:].zone_id)
         if others:
             st.caption(t("others_watch", z="، ".join(others)))
+    elif n["NO_DATA"] == len(c.scored):
+        st.markdown(f"<div class='card soft'>⚫ {t('do_NO_DATA')}</div>", unsafe_allow_html=True)
     else:
         st.markdown(f"<div class='card soft'>✓ {t('no_priority')}</div>", unsafe_allow_html=True)
     for w in anomaly_watch(c, ml.IF_CONTAMINATION).itertuples(index=False):
@@ -181,45 +185,81 @@ def page_home(c: Ctx) -> None:
     st.write("")
     b1, b2 = st.columns(2)
     b1.button(t("btn_map"), on_click=go, args=("map",), width="stretch", key="b_map")
-    b2.button(t("btn_photo"), on_click=go, args=("plant",), width="stretch", key="b_photo")
+    b2.button(t("nav_log"), on_click=go, args=("log",), width="stretch", key="b_log")
 
 
 def page_map(c: Ctx) -> None:
     question(t("q_map"))
     st.session_state.setdefault("fmap_view", "status")
-    view = synced_control("map view", ["status", "photo"], "fmap_view", lambda v: t(f"view_{v}"))
+    view = synced_control("map view", ["status", "image"], "fmap_view", lambda v: t(f"view_{v}"))
     st.markdown("<div class='legend-big'>" + "".join(
         f"<span><span class='sw' style='background:{CLASS_COLORS[k]}'></span>{ICON[k]} {cls_label(k)}</span>"
-        for k in ("HEALTHY", "MODERATE", "HIGH", "NO_CROP")) + "</div>", unsafe_allow_html=True)
+        for k in ("HIGH", "MODERATE", "HEALTHY", "NO_DATA", "NO_CROP")) + "</div>", unsafe_allow_html=True)
     labels = {z: f"{z} {ICON[cl]}" for z, cl in zip(c.scored.zone_id, c.scored.cls)}
     mcol, pcol = st.columns([2, 1])
     with mcol:
         render_farm_map(c, "True Color", f"farmer_map_{view}", zone_fill=0.38 if view == "status" else 0.0, height=460,
                         labels=labels, label_px=15, short_attribution=True, basemap_attr="© Esri",
                         class_labels={k: cls_label(k) for k in CLASS_COLORS},
-                        tooltip_aliases=(t("zone"), t("status"), t("priority_score") + " %"))
+                        tooltip_aliases=(t("zone"), t("status"), t("ind_flagged")))
         st.caption("👆 " + t("map_help"))
     with pcol:
         z = choose_zone(c)
         zone_card(z)
         st.button(t("view_details"), on_click=go, args=("zones",), type="primary", width="stretch", key="b_details")
+    st.caption("ⓘ " + t("grid_note"))
     st.caption("ⓘ " + t("sky_ground"))
+
+
+IND_KEY = {"NDVI vs farm median": "ind_ndvi", "NDMI (canopy water)": "ind_ndmi", "NDRE (chlorophyll)": "ind_ndre",
+           "LST vs farm mean (°C)": "ind_lst", "NDVI change (~2 weeks)": "ind_dndvi"}
+
+
+def _indicator_table(z: dict) -> None:
+    rows = []
+    for k, (pts, val, _rule) in z["rules"].items():
+        flag = t("flag_na") if pts is None else t("flag_yes") if pts > 0 else t("flag_no")
+        rows.append({t("ind_col_name"): t(IND_KEY[k]), t("ind_col_value"): fmt(val, 2, signed=k.startswith(("LST", "NDVI change"))),
+                     t("ind_col_flag"): flag})
+    st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
+    with st.expander(tr("Technical rule table", "جدول القواعد التقني")):
+        st.dataframe(analysis.rule_table(z), hide_index=True, width="stretch")
+
+
+def _quality_line(z: dict) -> None:
+    clear, veg = z.get("clear_frac"), z.get("veg_frac")
+    st.caption(t("z_quality_line", clear=round(clear * 100) if finite(clear) else "—", veg=round(veg * 100) if finite(veg) else "—",
+                 n=int(z.get("n_signals") or 0)))
+
+
+def _reference_text(c: Ctx) -> str:
+    prev = ltr(c.prev_date) if c.prev_date else t("z_reference_noprev")
+    return t("z_reference_text", ndvi=fmt(c.ref.get("ndvi_median")), prev=prev)
 
 
 def page_zones(c: Ctx) -> None:
     z = choose_zone(c)
     zone_card(z)
-    if z["cls"] not in ("NO_CROP", "NO_DATA"):
-        question(t("q_cause"))
-        last = _last_observation(c, z["zone_id"])
-        extra = {"symptoms": last.get("symptoms"), "soil": last.get("soil_condition"), "spread": last.get("spread")} if last else {}
-        cause_rows(zone_causes(c, z, **extra), limit=3)
+    if z["cls"] in ("NO_CROP", "NO_DATA"):
+        section(t("z_quality"))
+        _quality_line(z)
+    else:
+        section(t("z_why_flag"))
+        st.markdown("\n".join(f"- {w}" for w in _why_lines(z)))
+        section(t("z_values"))
+        _indicator_table(z)
+        section(t("z_quality"))
+        _quality_line(z)
+        section(t("z_reference"))
+        st.markdown(f"<div class='muted'>{_reference_text(c)}</div>", unsafe_allow_html=True)
+        trend_block(c, z)
+        section(t("z_alt"))
+        cause_rows(zone_causes(c, z), limit=3)
         st.markdown(f"<div class='note-card'>ⓘ {t('prelim')}</div>", unsafe_allow_html=True)
         weather_line(c)
         section(t("q_check"))
         checklist([t(f"check_{i}") for i in range(1, 6)])
         st.warning(t("irr_rule"))
-    st.button(t("btn_photo_zone"), on_click=go, args=("plant",), type="primary", width="stretch", key="b_zone_photo")
 
     crop_id = st.session_state.get("crop", "unknown")
     probs = knowledge.problems_for(crop_id)
@@ -231,221 +271,86 @@ def page_zones(c: Ctx) -> None:
         st.caption(t("pick_crop"))
 
 
-def _last_observation(c: Ctx, zone_id: str) -> dict | None:
-    try:
-        rows = c.store.list_observations(c.session_id, zone_id=zone_id, limit=1)
-    except Exception:  # noqa: BLE001
-        return None
-    return rows[0] if rows else None
-
-
-def page_plant(c: Ctx) -> None:
-    question(t("plant_title"))
-    section(t("step_where"))
-    st.markdown(f"<div class='muted'>{t('farm')}: {c.farm_name}</div>", unsafe_allow_html=True)
-    w1, w2 = st.columns(2)
-    with w1:
-        z = choose_zone(c, t("zone"))
-    with w2:
-        crop_id = synced_select(t("crop"), [cc["id"] for cc in knowledge.crops()], "crop", crop_label)
-
-    section(t("step_photo"))
-    up = st.file_uploader(t("upload"), type=["jpg", "jpeg", "png", "webp"], key="plant_photo")
-    photo = up.getvalue() if up else None
-    if photo:
-        st.image(photo, width=300)
-
-    section(t("step_see"))
-    vocab = knowledge.symptom_vocabulary()
-    crop_tags = {tag for p in knowledge.problems_for(crop_id) for tag in p["visual_tags"]}
-    base = ["yellowing", "leaf_spots", "wilting", "insects_visible"]
-    tags = base + sorted(crop_tags - set(base)) if crop_tags else list(vocab)
-    cols = st.columns(2)
-    chosen = [tag for i, tag in enumerate(tags) if cols[i % 2].checkbox(vocab[tag]["ar"] if is_ar() else vocab[tag]["en"], key=f"sym_{tag}")]
-    soil_l = {v: t(f"soil_{v}") for v in ("dry", "wet", "normal", "unknown")}
-    spread_l = {v: t(f"spread_{v}") for v in ("one", "many", "unknown")}
-    soil = st.radio(t("soil_q"), list(soil_l), format_func=soil_l.get, horizontal=True, index=3, key="soil")
-    spread = st.radio(t("spread_q"), list(spread_l), format_func=spread_l.get, horizontal=True, index=2, key="spread")
-
-    if st.button(t("btn_analyze"), type="primary", width="stretch", key="b_analyze"):
-        if not photo and not chosen and soil == "unknown" and spread == "unknown":
-            st.warning(t("need_input"))
-        else:
-            screening = ANALYZER.analyze(photo) if photo else None
-            causes = zone_causes(c, z, symptoms=chosen, soil=soil if soil in ("dry", "wet") else None,
-                                 spread=spread if spread in ("one", "many") else None, photo=screening)
-            st.session_state.plant_result = {
-                "zone": z["zone_id"], "crop": crop_id, "symptoms": chosen, "soil": soil, "spread": spread,
-                "screening": screening, "causes": causes, "specific": fusion.specific_suspicions(crop_id, chosen),
-                "photo": photo, "saved_id": None,
-            }
-    res = st.session_state.get("plant_result")
-    if res and res["zone"] == z["zone_id"]:
-        _plant_result(c, z, res)
-
-
-def _plant_result(c: Ctx, z: dict, res: dict) -> None:
-    section(t("step_result"))
-    sc = res["screening"]
-    if sc is not None:
-        if sc.get("ok"):
-            a, b = st.columns([1, 1.4])
-            a.image(sc["overlay"], width=240, caption=tr("Yellow and brown areas highlighted", "تظليل المناطق الصفراء والبنية"))
-            b.markdown(t("photo_colors", g=round(sc["green_share"] * 100), y=round(sc["yellow_share"] * 100), b=round(sc["brown_share"] * 100)))
-            b.caption("ⓘ " + t("photo_method"))
-        else:
-            st.warning(t(f"photo_quality_{sc['reason']}"))
-
-    vocab = knowledge.symptom_vocabulary()
-    spec = res["specific"]
-    top_cause = next((r for r in res["causes"] if r["score"] >= 3), None)
-    if spec:
-        m, p = spec[0], spec[0]["problem"]
-        words = "، ".join(vocab[x]["ar"] if is_ar() else vocab[x]["en"] for x in m["matches"])
-        st.markdown(
-            f"<div class='zone-card' style='border-inline-start-color:#2F7D4E'>"
-            f"<div class='s'>{t('first_suspicion')}: {p['group_ar'] if is_ar() else p['group_en']}</div>"
-            f"<div class='d'>{t('may_match')}: <b>{p['name_ar'] if is_ar() else p['name_en']}</b></div>"
-            f"<div class='d'>{level_badge(m['level'], m['level_ar'])}</div>"
-            f"<div class='d'>{t('matching_symptoms')}: {words}</div></div>", unsafe_allow_html=True)
-        problem_details(p)
-    elif top_cause:
-        st.markdown(
-            f"<div class='zone-card' style='border-inline-start-color:#2F7D4E'>"
-            f"<div class='s'>{t('first_suspicion')}: {top_cause['icon']} {top_cause['ar'] if is_ar() else top_cause['en']}</div>"
-            f"<div class='d'>{level_badge(top_cause['level'], top_cause['level_ar'])}</div></div>", unsafe_allow_html=True)
-    else:
-        st.markdown(f"<div class='card soft'>{t('insufficient')}</div>", unsafe_allow_html=True)
-
-    if "yellowing" in res["symptoms"] or (sc and "photo_yellow" in (sc.get("signals") or [])):
-        st.markdown(f"<div class='note-card'>ⓘ {t('yellowing_note')}</div>", unsafe_allow_html=True)
-
-    others = [r for r in res["causes"] if r["score"] > 0 and r is not top_cause]
-    if others or len(spec) > 1:
-        section(t("other_possibilities"))
-        cause_rows(others, limit=3)
-        for m in spec[1:3]:
-            st.caption(f"{t('may_match')}: {m['problem']['name_ar'] if is_ar() else m['problem']['name_en']} ({m['level_ar'] if is_ar() else m['level']})")
-
-    section(t("q_check"))
-    steps = [t(f"plant_check_{i}") for i in range(1, 6)]
-    if spec:
-        steps += (spec[0]["problem"]["inspection_ar"] if is_ar() else spec[0]["problem"]["inspection_en"])[:2]
-    checklist(list(dict.fromkeys(steps)))
-    st.info(t("final_note"))
-
-    if not res["saved_id"]:
-        if st.button(t("btn_save"), width="stretch", key="b_save_obs"):
-            _save_observation(c, z, res)
-    else:
-        st.success(t("saved"))
-        st.caption(c.store.persistent_note_ar if is_ar() else c.store.persistent_note_en)
-        _validation_form(c, res["saved_id"], res["crop"], res.get("top_cause"), key=f"val_{res['saved_id']}")
-
-
-def _save_observation(c: Ctx, z: dict, res: dict) -> None:
-    sc, spec = res["screening"], res["specific"]
-    rec = {
-        "session_id": c.session_id, "farm_id": c.farm_id, "farm_name": c.farm_name,
-        "data_mode": "real" if c.use_ee else "demo", "zone_id": z["zone_id"], "crop_id": res["crop"],
-        "satellite_date": c.date, "satellite_class": z["cls"], "satellite_score": z["score"] if finite(z["score"]) else None,
-        "lat": (z["min_lat"] + z["max_lat"]) / 2, "lon": (z["min_lon"] + z["max_lon"]) / 2,
-        "symptoms": res["symptoms"], "soil_condition": res["soil"], "spread": res["spread"],
-        "photo_screening": {k: v for k, v in sc.items() if k != "overlay"} if sc else None,
-        "possible_causes": [{"cause": r["cause"], "score": r["score"], "level": r["level"]} for r in res["causes"]],
-        "candidate_problems": [{"id": m["problem"]["id"], "level": m["level"], "matches": m["matches"]} for m in spec[:3]],
-        "notes": None,
-    }
-    try:
-        jpeg = prepare_for_storage(res["photo"]) if res["photo"] and sc and sc.get("reason") != "unreadable" else None
-        res["saved_id"] = c.store.save_observation(rec, jpeg)
-        res["top_cause"] = res["causes"][0]["cause"] if res["causes"] and res["causes"][0]["score"] > 0 else None
-        st.session_state.plant_result = res
-        st.rerun()
-    except Exception:  # noqa: BLE001
-        st.error(t("save_failed"))
-
-
-def _validation_form(c: Ctx, obs_id: str, crop_id: str, prediction: str | None, key: str) -> None:
-    section(t("validate_title"))
-    st.caption(t("validate_note"))
-    with st.form(key):
-        fc_l = {"soil_dry": t("fc_dry"), "soil_not_dry": t("fc_not_dry"), "not_checked": t("fc_none")}
-        fc = st.radio(t("field_check"), list(fc_l), format_func=fc_l.get, horizontal=True, index=2)
-        cause_l = {k: f"{v['icon']} " + (v["ar"] if is_ar() else v["en"]) for k, v in fusion.CAUSES.items()}
-        cause_l.update({"none": t("cause_none"), "unknown": t("cause_unknown")})
-        cause = st.selectbox(t("actual_cause"), list(cause_l), index=len(cause_l) - 1, format_func=cause_l.get)
-        prob_l = {"": "—", **{p["id"]: (p["name_ar"] if is_ar() else p["name_en"]) for p in knowledge.problems_for(crop_id)}}
-        pid = st.selectbox(t("actual_problem"), list(prob_l), format_func=prob_l.get) or None
-        act_l = {a: t(a) for a in ACTIONS}
-        action = st.selectbox(t("action"), list(act_l), format_func=act_l.get)
-        notes = st.text_area(t("notes"), max_chars=500)
-        if st.form_submit_button(t("btn_save_validation"), type="primary"):
-            try:
-                c.store.save_validation({"session_id": c.session_id, "observation_id": obs_id, "ray_prediction": prediction,
-                                         "field_check": fc, "actual_cause": cause, "actual_problem_id": pid,
-                                         "action_taken": action, "notes": notes or None})
-                st.success(t("validation_saved"))
-            except Exception:  # noqa: BLE001
-                st.error(t("save_failed"))
-
-
 def page_log(c: Ctx) -> None:
     question(t("log_title"))
+    st.caption(t("log_intro"))
+    prio = list(priority_zones(c).zone_id)
+    ids = prio + [z for z in c.scored.zone_id if z not in prio]
+    cur = st.session_state.get("zone_sel")
+    with st.expander(t("log_add"), expanded=True):
+        with st.form("inspection_form", clear_on_submit=True):
+            zid = st.selectbox(t("zone"), ids, index=ids.index(cur) if cur in ids else 0, key="log_zone",
+                               format_func=lambda x: zone_label(x, zone_row(c, x)["cls"]))
+            day = st.date_input(t("log_date"), value=dt.date.today(), max_value=dt.date.today(), key="log_day")
+            cond = st.radio(t("log_condition"), list(storage.CONDITIONS), format_func=lambda v: t(f"cond_{v}"), index=2, key="log_cond")
+            irr = st.radio(t("log_irrigation"), list(storage.IRRIGATION_ISSUE), format_func=lambda v: t(f"irr_{v}"), index=2,
+                           horizontal=True, key="log_irr")
+            alt = st.multiselect(t("log_alt"), list(storage.ALT_CAUSES), format_func=lambda v: t(f"alt_{v}"), key="log_alt")
+            moist = st.number_input(t("log_moisture"), min_value=0.0, max_value=100.0, value=0.0, step=1.0, key="log_moist")
+            by = st.text_input(t("log_inspector"), max_chars=60, key="log_by")
+            notes = st.text_area(t("notes"), max_chars=500, key="log_notes")
+            submitted = st.form_submit_button(t("btn_log_save"), type="primary")
+        if submitted:
+            z = zone_row(c, zid)
+            rec = {
+                "session_id": c.session_id, "farm_id": c.farm_id, "farm_name": c.farm_name,
+                "data_mode": "real" if c.use_ee else "demo", "zone_id": zid, "crop_id": st.session_state.get("crop", "unknown"),
+                "satellite_date": c.date, "satellite_class": z["cls"], "satellite_score": z["score"] if finite(z["score"]) else None,
+                "lat": (z["min_lat"] + z["max_lat"]) / 2, "lon": (z["min_lon"] + z["max_lon"]) / 2,
+                "inspection_date": day.isoformat(), "condition": cond, "irrigation_issue": irr, "alt_causes": alt or None,
+                "soil_moisture_pct": float(moist) if moist > 0 else None, "inspector": by.strip() or None, "notes": notes.strip() or None,
+            }
+            try:
+                c.store.save_observation(rec)
+                st.success(t("log_saved"))
+                st.caption(c.store.persistent_note_ar if is_ar() else c.store.persistent_note_en)
+            except Exception as exc:  # noqa: BLE001
+                log.warning("inspection not saved: %s", exc)
+                st.error(t("save_failed"))
+
     st.caption(t("log_session_note"))
     try:
-        rows = c.store.list_observations(c.session_id, limit=30)
-        vals = {v["observation_id"]: v for v in c.store.list_validations([r["id"] for r in rows])}
+        rows = c.store.list_observations(c.session_id, limit=50)
     except Exception:  # noqa: BLE001
-        rows, vals = [], {}
+        rows = []
     if not rows:
         st.markdown(f"<div class='card soft'>{t('log_empty')}</div>", unsafe_allow_html=True)
-        st.button(t("btn_photo"), on_click=go, args=("plant",), key="b_log_photo")
         return
-    vocab = knowledge.symptom_vocabulary()
+    section(t("val_title"))
+    v = validation.summarize([r for r in rows if r.get("data_mode") != "demo"])
+    if not v["n_usable"]:
+        st.caption(t("val_none"))
+    else:
+        st.markdown(f"- {t('val_flagged', n=v['n_flagged_inspected'], k=v['n_flagged_confirmed'])}\n"
+                    f"- {t('val_unflagged', n=v['n_unflagged_inspected'], k=v['n_unflagged_problem'])}")
+        if not v["reliable"]:
+            st.caption(t("val_small", m=validation.MIN_RECORDS))
     for r in rows:
-        v = vals.get(r["id"])
-        state = "✅ " + t("log_validated") if v else "⏳ " + t("log_pending")
-        with st.expander(f"📍 {t('zone')} {r['zone_id']} · {crop_name(r.get('crop_id') or 'unknown')} · {str(r['created_at'])[:10]} · {state}"):
+        demo = " · " + t("st_demo") if r.get("data_mode") == "demo" else ""
+        with st.expander(f"📍 {t('zone')} {r['zone_id']} · {r.get('inspection_date') or '—'} · {t('cond_' + r['condition']) if r.get('condition') in storage.CONDITIONS else '—'}{demo}"):
             st.markdown(f"**{t('farm')}:** {r.get('farm_name') or '—'}")
-            img = None
-            try:
-                img = c.store.get_image(r.get("photo_path"))
-            except Exception:  # noqa: BLE001
-                pass
-            if img:
-                st.image(img, width=260, caption=t("log_photo"))
-            sym = r.get("symptoms") or []
-            if sym:
-                st.markdown(f"**{t('log_symptoms')}:** " + "، ".join(vocab[s]["ar"] if is_ar() else vocab[s]["en"] for s in sym if s in vocab))
-            cands = r.get("candidate_problems") or []
-            first = cands[0] if cands and isinstance(cands[0], dict) else None
-            top = next((x for x in (r.get("possible_causes") or []) if x.get("score", 0) > 0), None)
-            if first and knowledge.problem(first["id"]):
-                p = knowledge.problem(first["id"])
-                result = f"{p['group_ar'] if is_ar() else p['group_en']} — {t('may_match')}: {p['name_ar'] if is_ar() else p['name_en']}"
-            elif top:
-                cz = fusion.CAUSES[top["cause"]]
-                result = f"{cz['icon']} {cz['ar'] if is_ar() else cz['en']}"
-            else:
-                result = t("insufficient")
-            st.markdown(f"**{t('log_result')}:** {result}")
-            if v:
-                cause = fusion.CAUSES.get(v.get("actual_cause"), {})
-                act = v.get("action_taken")
-                st.markdown(f"**{t('actual_cause')}:** {(cause.get('ar') if is_ar() else cause.get('en')) or t('cause_none' if v.get('actual_cause') == 'none' else 'cause_unknown')}")
-                if act in ACTIONS:
-                    st.markdown(f"**{t('action')}:** {t(act)}")
-                if v.get("notes"):
-                    st.markdown(f"**{t('notes')}:** {v['notes']}")
-            else:
-                _validation_form(c, r["id"], r.get("crop_id") or "unknown", top["cause"] if top else None, key=f"logval_{r['id']}")
+            if r.get("satellite_class") in CLASS_COLORS:
+                st.markdown(f"**{t('log_sat')}:** {cls_label(r['satellite_class'])} ({ltr(r.get('satellite_date') or '—')})", unsafe_allow_html=True)
+            if r.get("irrigation_issue") in storage.IRRIGATION_ISSUE:
+                st.markdown(f"**{t('log_irrigation')}** {t('irr_' + r['irrigation_issue'])}")
+            if r.get("alt_causes"):
+                st.markdown(f"**{t('log_alt')}:** " + "، ".join(t(f"alt_{a}") for a in r["alt_causes"] if a in storage.ALT_CAUSES))
+            if r.get("soil_moisture_pct") is not None:
+                st.markdown(f"**{t('log_moisture_short')}:** {fmt(r['soil_moisture_pct'], 0)}")
+            if r.get("inspector"):
+                st.markdown(f"**{t('log_by')}:** {r['inspector']}")
+            if r.get("notes"):
+                st.markdown(f"**{t('notes')}:** {r['notes']}")
 
 
-def _zone_trend(c: Ctx, z: dict):
-    """Real vegetation-condition series of one area (cached satellite query, or the local demo farm).
+def page_tech(c: Ctx) -> None:
+    details.render(c)
 
-    Returns (series, slope per 10 days) or None when fewer than 3 real observations exist. Nothing is interpolated.
+
+def _zone_series(c: Ctx, z: dict):
+    """Real NDVI series of one zone up to the analysis date (cached satellite query, or the local demo farm).
+
+    Returns the DataFrame (possibly with few rows) or None when the query failed. Nothing is interpolated.
     """
     zb = (z["min_lon"], z["min_lat"], z["max_lon"], z["max_lat"])
     try:
@@ -459,10 +364,22 @@ def _zone_trend(c: Ctx, z: dict):
     if ts is None or ts.empty or "NDVI" not in ts:
         return None
     ts = ts.dropna(subset=["NDVI"])
-    ts = ts[ts.date <= pd.Timestamp(c.date)]
-    if len(ts) < 3:
-        return None
-    return ts, analysis.trend_slope(ts, "NDVI")
+    return ts[ts.date <= pd.Timestamp(c.date)]
+
+
+def trend_block(c: Ctx, z: dict) -> None:
+    """Same-zone temporal comparison; says 'insufficient data' instead of inventing a conclusion."""
+    section(t("trend_title"))
+    ts = _zone_series(c, z)
+    summ = analysis.temporal_summary(ts, c.date) if ts is not None else {"n": 0, "status": "insufficient"}
+    if summ["status"] == "insufficient":
+        st.caption(t("tr_insufficient", n=summ["n"], m=TREND_MIN_OBS))
+        return
+    dot = {"stable": "🟢", "decline": "🟡", "persistent_decline": "🔴"}[summ["status"]]
+    st.markdown(f"<div class='status-line'>{dot} {t('tr_' + summ['status'])}</div>", unsafe_allow_html=True)
+    st.line_chart(ts.set_index("date")["NDVI"].rename(t("trend_axis")), height=200)
+    st.caption(t("tr_baseline", latest=fmt(summ["latest"]), base=fmt(summ["baseline"])) + " "
+               + t("trend_basis", n=summ["n"], a=ltr(summ["first_date"]), b=ltr(summ["last_date"])), unsafe_allow_html=True)
 
 
 def _why_lines(z: dict) -> list[str]:
@@ -522,12 +439,10 @@ def page_water(c: Ctx) -> None:
     if not len(prio):
         st.markdown(f"<div class='card soft'>✓ {t('irr_none')}</div>", unsafe_allow_html=True)
     else:
-        # 2. highest priority + shortcuts (map with the area selected / plant check)
+        # 2. highest priority + shortcut to the map with the area selected
         top = str(prio.iloc[0].zone_id)
         section(t("irr_top", z=top))
-        b1, b2 = st.columns(2)
-        b1.button(t("btn_show_on_map", z=top), on_click=go, args=("map", top), type="primary", width="stretch", key="b_irr_map")
-        b2.button(t("btn_plant_check"), on_click=go, args=("plant", top), width="stretch", key="b_irr_plant")
+        st.button(t("btn_show_on_map", z=top), on_click=go, args=("map", top), type="primary", width="stretch", key="b_irr_map")
 
         # 3. possible water stress in the chosen area (always hedged)
         ids = [str(x) for x in prio.zone_id]
@@ -550,17 +465,7 @@ def page_water(c: Ctx) -> None:
         weather_line(c)
 
         # 5. change over time (real images only)
-        section(t("trend_title"))
-        trend = _zone_trend(c, z)
-        if trend and finite(trend[1]):
-            ts, slope = trend
-            st.markdown(f"<div class='status-line'>{t('trend_up') if slope > 0.02 else t('trend_down') if slope < -0.02 else t('trend_flat')}</div>",
-                        unsafe_allow_html=True)
-            st.line_chart(ts.set_index("date")["NDVI"].rename(t("trend_axis")), height=200)
-            st.caption(t("trend_basis", n=len(ts), a=ltr(ts.date.min().strftime("%Y-%m-%d")), b=ltr(ts.date.max().strftime("%Y-%m-%d"))),
-                       unsafe_allow_html=True)
-        else:
-            st.caption(t("trend_na"))
+        trend_block(c, z)
 
         # 6. possible causes (fertilisation never names a specific nutrient)
         section(t("causes_title"))
@@ -584,7 +489,6 @@ def page_water(c: Ctx) -> None:
     section(t("now_title"))
     st.markdown("\n".join(f"{i}. {t(f'now_{i}')}" for i in range(1, 8)))
     st.warning(t("irr_rule"))
-    st.caption("📷 " + t("now_photo"))
 
     # 9. area priorities (existing priority list, now with high / medium labels)
     section(t("prio_title"))
@@ -619,8 +523,8 @@ def page_about(c: Ctx) -> None:
     st.markdown(f"<div class='card'>🔒 {t('privacy_text')}</div>", unsafe_allow_html=True)
 
 
-RENDER = {"home": page_home, "map": page_map, "zones": page_zones, "plant": page_plant,
-          "water": page_water, "log": page_log, "about": page_about}
+RENDER = {"home": page_home, "map": page_map, "zones": page_zones, "water": page_water, "log": page_log,
+          "tech": page_tech, "about": page_about}
 
 
 def nav_labels() -> dict:
