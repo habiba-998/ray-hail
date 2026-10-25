@@ -56,10 +56,10 @@ from src.preprocessing import make_zone_grid
 from src.storage import make_store
 from src.ui import farmer, styles
 from src.ui.common import Ctx, ee_connect, ee_dates, ee_samples, ee_weather, ee_zone_stats, get_demo_farm, synced_control
-from src.ui.i18n import is_ar, t
+from src.ui.i18n import is_ar, ltr, t
 
 log = logging.getLogger("ray")
-st.set_page_config(page_title="رَيّ | RAY", page_icon="💧", layout="wide", initial_sidebar_state="auto")
+st.set_page_config(page_title="رَيّ | RAY", page_icon="💧", layout="wide", initial_sidebar_state="collapsed")
 ICON_B64 = base64.b64encode(
     b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="24 12 72 84"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">'
     b'<stop offset="0" stop-color="#1E5B38"/><stop offset="1" stop-color="#65A30D"/></linearGradient></defs>'
@@ -104,8 +104,9 @@ def friendly_stop(detail: object) -> None:
     """
     log.warning("RAY data loading failed: %s", detail)
     msg = status.FAILURE_MESSAGES_AR[status.classify_failure(detail)]
-    st.markdown(f"<div class='databadge unavailable'>⛔ {t('st_unavailable')}</div>"
-                f"<div class='card soft'>⚠️ {msg}</div>", unsafe_allow_html=True)
+    status_slot.markdown(f"<div class='statusbar'><span class='chip unavailable'>⛔ {t('st_unavailable')}</span></div>",
+                         unsafe_allow_html=True)
+    st.markdown(f"<div class='databadge unavailable'>⚠️ {msg}</div>", unsafe_allow_html=True)
     if st.button(t("btn_retry"), key="b_retry"):
         ee_connect.clear()
         st.cache_data.clear()
@@ -136,27 +137,20 @@ today = dt.date.today()
 start, end, max_cloud = (today - dt.timedelta(days=150), today, 30) if use_ee else (None, None, None)
 
 # ---------------------------------------------------------------------------
-# Header + farmer menu (sidebar)
+# Header: brand + farm picker; the data-status line is filled once the data are known
 # ---------------------------------------------------------------------------
-st.markdown(
-    f"<div class='topbar'><img src='data:image/svg+xml;base64,{ICON_B64}' alt=''>"
-    f"<div><h1>{t('app_name')}</h1><div class='sub'>{t('subtitle')}</div></div></div>",
-    unsafe_allow_html=True,
-)
-with st.sidebar:
-    st.markdown(f"<div class='side-brand'><img src='data:image/svg+xml;base64,{ICON_B64}' alt=''> {t('app_name')}</div>",
-                unsafe_allow_html=True)
-    farm_keys = list(FARMS)
-    st.session_state.farm = preset
-    st.selectbox(t("farm"), farm_keys, format_func=FARMS.get, key="farm")
-    labels = farmer.nav_labels()
-    wkey = f"_r_fpage_{'ar' if is_ar() else 'en'}"
-    st.session_state[wkey] = st.session_state.fpage
-
-    def _nav():
-        st.session_state.fpage = st.session_state[wkey]
-
-    st.radio(t("menu"), farmer.PAGES, format_func=labels.get, key=wkey, on_change=_nav)
+with st.container(key="header"):
+    _cols = st.columns([3, 2], vertical_alignment="center")
+    brand_col, farm_col = (_cols[1], _cols[0]) if is_ar() else (_cols[0], _cols[1])
+    brand_col.markdown(
+        f"<div class='brand'><img src='data:image/svg+xml;base64,{ICON_B64}' alt=''>"
+        f"<div><h1>{t('app_name')}</h1><div class='sub'>{t('subtitle')}</div></div></div>",
+        unsafe_allow_html=True,
+    )
+    with farm_col:
+        st.session_state.farm = preset
+        st.selectbox(t("farm"), list(FARMS), format_func=FARMS.get, key="farm", label_visibility="collapsed")
+    status_slot = st.empty()
 
 # ---------------------------------------------------------------------------
 # Data connection
@@ -245,12 +239,19 @@ ctx = Ctx(
 # ---------------------------------------------------------------------------
 if use_ee:
     fr = status.freshness(date)
-    st.markdown(f"<div class='databadge real'>🛰️ {t('st_real')} · {t('latest_obs', date=date, n=fr.age_days)}</div>", unsafe_allow_html=True)
+    status_slot.markdown(
+        f"<div class='statusbar'><span class='chip real'>🛰️ {t('st_real')}</span>"
+        f"<span>{t('latest_obs', date=date, n=fr.age_days)}</span>"
+        f"<span>{t('period', a=ltr(start), b=ltr(end))}</span></div>", unsafe_allow_html=True)
     if fr.stale:
         st.markdown(f"<div class='databadge demo'>⚠️ {t('stale_note')}</div>", unsafe_allow_html=True)
 else:
-    st.markdown(f"<div class='databadge demo'>⚠️ {t('demo_banner')}</div>", unsafe_allow_html=True)
-synced_control("nav", farmer.PAGES, "fpage", farmer.nav_labels().get)
+    status_slot.markdown(
+        f"<div class='statusbar'><span class='chip demo'>⚠️ {t('st_demo')}</span>"
+        f"<span>{t('latest_obs_demo', date=date)}</span></div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='databadge demo'>{t('demo_banner')}</div>", unsafe_allow_html=True)
+with st.container(key="topnav"):
+    synced_control("nav", farmer.PAGES, "fpage", farmer.nav_labels().get)
 farmer.render(ctx)
 
 st.markdown(

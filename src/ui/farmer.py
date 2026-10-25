@@ -70,12 +70,15 @@ def checklist(items: list[str]) -> None:
 def zone_card(z: dict, extra: str = "") -> None:
     """Answers: where is the problem? why does it deserve attention? what do I do now?"""
     cls = z["cls"]
+    meta = ""
+    if cls not in ("NO_CROP", "NO_DATA") and z.get("n_signals"):
+        meta = f"<div class='meta'>{t('ind_flagged')}: {int(z.get('n_flagged') or 0)} / {int(z['n_signals'])}</div>"
     st.markdown(
         f"<div class='zone-card' style='border-inline-start-color:{CLASS_COLORS[cls]}'>"
-        f"<div class='z'>📍 {t('zone')} {z['zone_id']}</div>"
-        f"<div class='s' style='color:{TEXT_COLOR[cls]}'>{EMOJI[cls]} {cls_label(cls)}</div>"
+        f"<div class='top'><span class='z'>{t('zone')} {z['zone_id']}</span>"
+        f"<span class='pill {cls}'>{ICON[cls]} {cls_label(cls)}</span></div>"
         f"<div class='d'>{t('why_' + cls)}</div>"
-        f"<div class='d'><b>➜ {t('do_' + cls)}</b></div>{extra}</div>",
+        f"<div class='d'><b>➜ {t('do_' + cls)}</b></div>{meta}{extra}</div>",
         unsafe_allow_html=True,
     )
 
@@ -151,25 +154,24 @@ def page_home(c: Ctx) -> None:
     question(t("q_home"))
     counts = c.scored.cls.value_counts()
     n = {k: int(counts.get(k, 0)) for k in ("HIGH", "MODERATE", "HEALTHY", "NO_DATA", "NO_CROP")}
-    period = t("period", a=ltr(c.start), b=ltr(c.end)) if c.use_ee else t("latest_obs_demo", date=c.date)
     nocrop = list(c.scored.loc[c.scored.cls == "NO_CROP", "zone_id"])
+    tiles = [("HIGH", n["HIGH"], t("cls_HIGH")), ("MODERATE", n["MODERATE"], t("cls_MODERATE")),
+             ("HEALTHY", n["HEALTHY"], t("cls_HEALTHY")), ("NO_DATA", n["NO_DATA"], t("cls_NO_DATA"))]
     st.markdown(
-        f"<div class='card'><div class='section-title' style='margin-top:0'>{t('today_status')}</div>"
-        f"<div class='status-line'>🔴 {count_areas(n['HIGH'], 'check')}</div>"
-        f"<div class='status-line'>🟡 {count_areas(n['MODERATE'], 'watch')}</div>"
-        f"<div class='status-line'>🟢 {count_areas(n['HEALTHY'], 'ok')}</div>"
-        f"<div class='status-line'>⚫ {count_areas(n['NO_DATA'], 'nodata')}</div>"
-        + (f"<div class='muted'>⚪ {t('n_nocrop', z='، '.join(nocrop))}</div>" if nocrop else "")
-        + f"<div class='muted' style='margin-top:6px'>{t('farm')}: {c.farm_name} · {period}</div></div>",
+        f"<div class='section-title'>{t('today_status')}</div><div class='kpis'>"
+        + "".join(f"<div class='kpi {k}'><div class='n'>{v}</div><div class='l'>{lbl}</div></div>" for k, v, lbl in tiles)
+        + "</div>"
+        + (f"<div class='muted'>⚪ {t('n_nocrop', z='، '.join(nocrop))}</div>" if nocrop else ""),
         unsafe_allow_html=True,
     )
     prio = priority_zones(c)
     st.write("")
     if len(prio):
         top = prio.iloc[0].to_dict()
-        st.button(t("btn_top"), on_click=go, args=("zones", top["zone_id"]), type="primary", width="stretch", key="b_prio")
-        section(t("top_zone"))
+        section(t("next_action"))
         zone_card(top)
+        st.write("")
+        st.button(t("btn_top"), on_click=go, args=("zones", top["zone_id"]), type="primary", width="stretch", key="b_prio")
         others = list(prio.iloc[1:].zone_id)
         if others:
             st.caption(t("others_watch", z="، ".join(others)))

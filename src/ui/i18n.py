@@ -16,11 +16,11 @@ S: dict[str, tuple[str, str]] = {
     "menu": ("Menu", "القائمة"),
     "farm": ("Farm", "المزرعة"),
     # --- navigation ---------------------------------------------------------
-    "nav_home": ("🏠 Home", "🏠 الرئيسية"),
-    "nav_map": ("🗺️ Farm map", "🗺️ خريطة المزرعة"),
-    "nav_zones": ("📍 Zones", "📍 المناطق"),
-    "nav_water": ("💧 Irrigation", "💧 الري"),
-    "nav_about": ("ℹ️ About RAY", "ℹ️ عن رَيّ"),
+    "nav_home": (":material/home: Home", ":material/home: الرئيسية"),
+    "nav_map": (":material/map: Farm map", ":material/map: خريطة المزرعة"),
+    "nav_zones": (":material/location_on: Zones", ":material/location_on: المناطق"),
+    "nav_water": (":material/water_drop: Irrigation", ":material/water_drop: الري"),
+    "nav_about": (":material/info: About RAY", ":material/info: عن رَيّ"),
     # --- home ---------------------------------------------------------------
     "q_home": ("What needs attention on my farm?", "ما الذي يحتاج إلى انتباه في مزرعتي؟"),
     "today_status": ("Your farm today", "حالة مزرعتك اليوم"),
@@ -94,7 +94,7 @@ S: dict[str, tuple[str, str]] = {
     "img_credit": ("Image: {a} · licence {lic}", "الصورة: {a} · الترخيص {lic}"),
     "ref_image": ("Reference image (not from your farm)", "صورة مرجعية (ليست من مزرعتك)"),
     # --- field inspection log (non-photographic) -------------------------------------
-    "nav_log": ("📋 Field inspections", "📋 سجل الفحص الميداني"),
+    "nav_log": (":material/assignment: Field inspections", ":material/assignment: سجل الفحص"),
     "log_title": ("📋 Field inspection log", "📋 سجل الفحص الميداني"),
     "log_intro": ("Record what you found after visiting an area. These records are your own notes: they are not verified measurements, but they let RAY be checked against the field later.",
                   "سجّل ما وجدته بعد زيارة المنطقة. هذه ملاحظاتك الشخصية وليست قياسات موثّقة، لكنها تسمح بمقارنة نتائج رَيّ بالواقع الميداني لاحقًا."),
@@ -230,7 +230,7 @@ S: dict[str, tuple[str, str]] = {
     "dss_goal": ("RAY is a decision-support system, not an automatic irrigation controller. Its aim is to show where to start checking and what to verify before deciding on irrigation.",
                  "رَيّ نظام لدعم القرار، وليس نظامًا للتحكم التلقائي في الري. هدفه تحديد المكان الذي يبدأ منه الفحص، وما ينبغي التحقق منه قبل اتخاذ قرار الري."),
     # --- data status & dashboard -----------------------------------------------------
-    "nav_tech": ("🔬 Technical details", "🔬 التفاصيل التقنية"),
+    "nav_tech": (":material/science: Technical details", ":material/science: التفاصيل التقنية"),
     "st_real": ("Real satellite data", "بيانات فضائية حقيقية"),
     "st_unavailable": ("Real data unavailable", "البيانات الحقيقية غير متاحة حاليًا"),
     "st_demo": ("DEMO data (simulated)", "بيانات تجريبية (محاكاة)"),

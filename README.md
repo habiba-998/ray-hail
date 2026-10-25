@@ -30,7 +30,8 @@ This decision is **provisional**: it follows the existing code, not validated ev
 
 | Page | Content |
 |---|---|
-| 🏠 الرئيسية | Data status (REAL / DEMO), farm, analysis period, latest valid observation date and its age, counts of zones that **need inspection / need follow-up / show no clear abnormal signal / have insufficient data**, the next action (highest-priority zone) |
+| Header (all pages) | Brand, farm picker, data-status chip (REAL / DEMO / UNAVAILABLE), latest valid observation date and its age, analysis period; one navigation bar (no duplicate sidebar menu) |
+| 🏠 الرئيسية | Four status tiles: zones that **need inspection / need follow-up / show no clear abnormal signal / have insufficient data**; no-crop zones; the next action (highest-priority zone card + button) |
 | 🗺️ خريطة المزرعة | Sentinel-2 true-colour image with coloured, icon-labelled zones; tap a zone to select it; legend; note that the grid is an analysis grid, not field or pivot boundaries |
 | 📍 المناطق | Why the zone was flagged, current indicator values, data quality (clear-pixel %, crop cover, indicators evaluated), the reference used, same-zone temporal comparison (or "insufficient data"), alternative explanations (hypotheses), recommended field checks, crop-specific common problems (sourced) |
 | 💧 الري | Irrigation-check workflow: highest-priority zone, hedged "possible water stress" wording, possible causes, grouped checklists. No volumes, no automatic control |
@@ -186,13 +187,20 @@ If you use Supabase and created the tables with an earlier schema, run `db/migra
 
 ## 7. Tests
 
+**No credentials needed (demo / synthetic data):**
+
 ```bash
 python -m pytest tests/test_rayy.py -q   # unit tests: indices, scoring, missing/cloudy data, temporal, IF, states, records
 python -m tests.core_test                # knowledge base, fusion, storage, weather summary
 python -m tests.smoke_test               # demo pipeline without UI
-python -m tests.ui_test                  # headless UI: demo mode + failing Earth Engine project
-python -m tests.ui_test YOUR_PROJECT_ID  # additionally real Earth Engine data (needs credentials)
-python -m tests.ee_check YOUR_PROJECT_ID # real Earth Engine path without UI (needs credentials)
+python -m tests.ui_test                  # headless UI in demo mode + a deliberately non-existent Earth Engine project
+```
+
+**Need real Google Earth Engine credentials** (`earthengine authenticate` or a service account, and a project):
+
+```bash
+python -m tests.ee_check YOUR_PROJECT_ID # real data path without UI: dates, zone statistics, Landsat, map tiles
+python -m tests.ui_test YOUR_PROJECT_ID  # everything above + every page again on real data
 ```
 
 On Windows set `PYTHONUTF8=1` so the Arabic test output prints.
@@ -204,8 +212,11 @@ too-few-indicator cases; temporal summary; Isolation Forest behaviour and per-zo
 selection and failure classification; inspection-record validation and storage; validation counting; UI pages render
 without errors, contain no photo workflow, and a failing Earth Engine project shows UNAVAILABLE without demo data.
 
+**Run against real Earth Engine data (functional, not scientific validation):** `tests.ee_check` and `tests.ui_test PROJECT`
+pass on this revision (real Sentinel-2/Landsat retrieval, zone statistics, map tiles, every page on real data).
+
 **Implemented but not validated:** every threshold and the priority index; the cause-fit ranking in `src/fusion.py`;
-Isolation Forest usefulness; LST comparability; the Earth Engine path after this revision (not run here – no credentials).
+Isolation Forest usefulness; LST comparability.
 
 **Planned:** field-boundary detection to replace the grid; crop-type and growth-stage-aware baselines; seasonal
 same-zone baselines from previous years; calibration with paired field measurements; ET-based water requirement.
