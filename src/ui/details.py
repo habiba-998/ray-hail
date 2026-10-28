@@ -11,9 +11,10 @@ import pandas as pd
 import streamlit as st
 
 from .. import config, ml
+from ..brand import NAME_AR, NAME_EN
 from ..indices import INDEX_INFO
 from .common import LIMITATIONS, Ctx, fmt
-from .i18n import is_ar, tr
+from .i18n import is_ar, t, tr
 
 
 def _h(title: str) -> None:
@@ -22,7 +23,11 @@ def _h(title: str) -> None:
 
 def render(c: Ctx) -> None:
     st.markdown(f"<div class='q'>{tr('Technical details', 'التفاصيل التقنية')}</div>", unsafe_allow_html=True)
-    st.markdown(f"<div class='note-card'>ⓘ {tr('For advanced users. RAY is a screening and prioritisation tool: it is not a plant-disease diagnostic system, not a soil-moisture sensor, not an irrigation controller and has no proven water savings.', 'للمستخدمين المتقدمين. رَيّ أداة فحص أولي وترتيب أولويات: ليست نظام تشخيص لأمراض النبات، ولا حساس رطوبة تربة، ولا متحكمًا في الري، ولم يثبت لها توفير في المياه.')}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='note-card'>ⓘ {tr('For advanced users. ' + NAME_EN + ' is a screening and prioritisation tool: it is not a plant-disease diagnostic system, not a soil-moisture sensor, not an irrigation controller and has no proven water savings.', 'للمستخدمين المتقدمين. ' + NAME_AR + ' أداة فحص أولي وترتيب أولويات: ليست نظام تشخيص لأمراض النبات، ولا حساس رطوبة تربة، ولا متحكمًا في الري، ولم يثبت لها توفير في المياه.')}</div>", unsafe_allow_html=True)
+
+    st.markdown(f"<div class='section-title'>{t('pipe_title')}</div><div class='pipeline'>"
+                + "".join(f"<div class='step'><span class='num'>{i}</span><b>{t(f'pipe_{i}')}</b><small>{t(f'pipe_{i}d')}</small></div>"
+                          for i in range(1, 6)) + "</div>", unsafe_allow_html=True)
 
     _h(tr("This run", "هذه النتيجة"))
     status = tr("REAL (Earth Engine)", "حقيقية (Earth Engine)") if c.use_ee else tr("DEMO (simulated, not a real place)", "تجريبية (محاكاة، ليست مكانًا حقيقيًا)")
@@ -35,7 +40,7 @@ def render(c: Ctx) -> None:
         tr("Landsat thermal dates (±12 days)", "تواريخ Landsat الحرارية (±١٢ يومًا)"): ", ".join(lst_dates) or tr("none available", "غير متاحة"),
         tr("Farm median NDVI (cropped zones)", "وسيط NDVI للمزرعة (المناطق المزروعة)"): fmt(c.ref.get("ndvi_median")),
         tr("Farm mean LST °C", "متوسط حرارة السطح للمزرعة °م"): fmt(c.ref.get("lst_mean"), 1),
-        tr("Isolation Forest features / pixels", "ميزات Isolation Forest / عدد البكسلات"): f"{', '.join(c.if_feats) or '—'} / {len(c.pix) if c.pix is not None else 0} (sampled {n_pix})",
+        tr("Isolation Forest features / pixels", "ميزات Isolation Forest / عدد البكسلات"): f"{', '.join(c.if_feats) or '—'} / {len(c.pix) if c.pix is not None else 0} ({tr('sampled', 'من أصل')} {n_pix})",
     }
     st.table(pd.Series(rows, name="").to_frame())
 

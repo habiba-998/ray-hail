@@ -13,6 +13,7 @@ from streamlit_folium import st_folium
 
 from .. import analysis
 from .. import data_acquisition as gee
+from ..brand import NAME_AR, NAME_EN
 from ..config import LANDSAT_WINDOW_DAYS
 from ..demo_data import DemoFarm
 from ..indices import PALETTES, VIS_RANGES, colorize, true_color
@@ -21,7 +22,7 @@ from ..visualization import build_map
 
 import logging
 
-log = logging.getLogger("ray")
+log = logging.getLogger("satra")
 Ctx = SimpleNamespace  # holds every result of the pipeline for the current run (built in app.py)
 
 # Show the "unusual pattern" note for a zone the rules did NOT flag when its share of Isolation-Forest-unusual
@@ -298,8 +299,8 @@ LIMITATIONS: list[tuple[str, str]] = [
      "الأنماط غير المعتادة التي يرصدها نموذج Isolation Forest قيم شاذة إحصائيًا وليست دليلًا على الإجهاد المائي، ونسبتها في المزرعة يحددها إعداد النموذج."),
     ("Zones are a regular grid, not real field or pivot boundaries.",
      "المناطق شبكة مربعات منتظمة، وليست حدود الحقول أو المحاور الفعلية."),
-    ("No evapotranspiration or soil-water balance is computed, so RAY gives no irrigation volumes.",
-     "لا يُحسب التبخر-النتح ولا الميزان المائي للتربة، لذلك لا يقدّم RAY كميات للري."),
+    ("No evapotranspiration or soil-water balance is computed, so " + NAME_EN + " gives no irrigation volumes.",
+     "لا يُحسب التبخر-النتح ولا الميزان المائي للتربة، لذلك لا تقدّم " + NAME_AR + " كميات للري."),
     ("Clouds and dust can remove satellite observations.", "قد تحجب الغيوم والغبار صور الأقمار الصناعية."),
     ("Sentinel-2 revisits about every 5 days. Landsat thermal data is coarser (100 m) and less frequent.",
      "يعود القمر Sentinel-2 كل 5 أيام تقريبًا، وبيانات Landsat الحرارية أقل دقة مكانية (100 م) وأقل تكرارًا."),
@@ -316,9 +317,9 @@ LIMITATIONS: list[tuple[str, str]] = [
     ("Crop-specific calibration is still required; thresholds are the same for all crops in this version.",
      "ما زالت المعايرة حسب المحصول مطلوبة؛ العتبات نفسها لكل المحاصيل في هذه النسخة."),
     ("No supervised model is trained yet because there are not enough labelled field observations. Field results "
-     "recorded in RAY are stored for future calibration; RAY does not learn automatically.",
+     "recorded in " + NAME_EN + " are stored for future calibration; " + NAME_EN + " does not learn automatically.",
      "لا يوجد نموذج إشرافي مدرّب حاليًا بسبب عدم توفر بيانات ميدانية مصنفة كافية. نتائج الفحص الميداني المسجلة تُحفظ "
-     "للمعايرة مستقبلًا، ورَيّ لا يتعلم تلقائيًا."),
+     "للمعايرة مستقبلًا، و" + NAME_AR + " لا تتعلم تلقائيًا."),
     ("Weather comes from ERA5-Land reanalysis (~11 km grid, published several days late). The National Center for "
      "Meteorology is not connected: its data require a licence.",
      "بيانات الطقس من ERA5-Land (شبكة ~١١ كم وتُنشر متأخرة عدة أيام). المركز الوطني للأرصاد غير متصل لأن بياناته تتطلب ترخيصًا."),

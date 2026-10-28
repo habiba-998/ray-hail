@@ -3,7 +3,8 @@
 Backends (chosen automatically):
   * SupabaseStore – Postgres table, used when Streamlit Secrets contain [supabase] url = "...", service_key = "...".
     The service key is used server-side only (never sent to the browser). Schema: db/schema.sql (+ db/migrations).
-  * SQLiteStore   – local file data/user_data/ray.db (git-ignored).
+  * SQLiteStore   – local file data/user_data/ray.db (git-ignored; file name kept from the former product name so
+                    existing records stay readable).
     On Streamlit Community Cloud the local disk is NOT persistent: data are lost when the app restarts.
 
 A record is what a person typed in after visiting a zone. It is NOT verified ground truth: the collection procedure
@@ -24,7 +25,8 @@ from pathlib import Path
 import requests
 
 ROOT = Path(__file__).resolve().parents[1]
-LOCAL_DIR = Path(os.environ.get("RAY_DATA_DIR") or ROOT / "data" / "user_data")  # override for tests
+# SATRA_DATA_DIR overrides the folder (tests); RAY_DATA_DIR is still honoured for existing setups
+LOCAL_DIR = Path(os.environ.get("SATRA_DATA_DIR") or os.environ.get("RAY_DATA_DIR") or ROOT / "data" / "user_data")
 
 OBS_FIELDS = ["id", "created_at", "session_id", "farm_id", "farm_name", "data_mode", "zone_id", "crop_id",
               "satellite_date", "satellite_class", "satellite_score", "lat", "lon",

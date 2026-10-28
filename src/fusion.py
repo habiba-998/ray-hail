@@ -1,12 +1,12 @@
 """Evidence fusion: which causes are CONSISTENT with the available evidence for a zone?
 
-Inputs (all optional except the zone): satellite rule points (existing RAY rules), Isolation-Forest unusual-pixel
+Inputs (all optional except the zone): satellite rule points (existing screening rules), Isolation-Forest unusual-pixel
 share, recent weather (ERA5-Land / NCM), crop and the user's optional field answers (symptoms, soil, spread).
 
 Output: for each cause category an evidence score, a qualitative level (strong / moderate / weak / none) and the list
 of reasons that produced it. This is a transparent, rule-based prototype:
   * it is NOT a probability and NOT a diagnosis – every category always needs field confirmation;
-  * weights are prototype values, not calibrated; field validations collected by RAY are stored so they can be used
+  * weights are prototype values, not calibrated; field validations collected in the app are stored so they can be used
     to calibrate these rules in the future (no automatic learning happens today);
   * Sentinel-1 SAR is shown as context but deliberately not scored (no local calibration).
 """
@@ -74,7 +74,7 @@ def possible_causes(zone: dict, *, weather: dict | None = None, anomaly_share: f
     reasons: dict[str, list] = {}
     rp = {k: v[0] for k, v in zone.get("rules", {}).items()}
 
-    # --- satellite (existing RAY rule points) ---
+    # --- satellite (existing rule points) ---
     ndmi, lst, ndre = rp.get("NDMI (canopy water)"), rp.get("LST vs farm mean (°C)"), rp.get("NDRE (chlorophyll)")
     rel, chg = rp.get("NDVI vs farm median"), rp.get("NDVI change (~2 weeks)")
     if ndmi:

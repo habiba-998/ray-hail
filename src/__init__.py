@@ -1,1 +1,1 @@
-"""RAY – Smarter Irrigation from Space (hackathon prototype)."""
+"""SATRA | ساترا – agricultural earth observation for inspection prioritisation (prototype)."""

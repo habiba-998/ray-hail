@@ -1,5 +1,5 @@
 {
-  "_about": "Disease & pest database for RAY. 'symptoms_en' paraphrases the cited source; 'symptoms_ar' is its Arabic translation. 'visual_tags' use the shared vocabulary in 'symptom_vocabulary' and are what the plant-check questionnaire matches against. Reference images are keys into images.json (licence recorded there). An empty list means no reference image is available.",
+  "_about": "Disease & pest database for SATRA. 'symptoms_en' paraphrases the cited source; 'symptoms_ar' is its Arabic translation. 'visual_tags' use the shared vocabulary in 'symptom_vocabulary' and are what the plant-check questionnaire matches against. Reference images are keys into images.json (licence recorded there). An empty list means no reference image is available.",
   "symptom_vocabulary": {
     "leaf_spots": {
       "en": "Spots or lesions on leaves",

@@ -1,4 +1,4 @@
--- RAY | رَيّ – database architecture (PostgreSQL / Supabase)
+-- SATRA | ساترا – database architecture (PostgreSQL / Supabase). Table and column names are unchanged by the rebrand.
 -- -----------------------------------------------------------------------------------------------
 -- Status in this version:
 --   * ACTIVE (written by the app when Supabase is configured): field_observations (non-photographic
@@ -83,7 +83,7 @@ create table if not exists users (
   id          uuid primary key default gen_random_uuid(),
   created_at  timestamptz default now(),
   role        text check (role in ('farmer','agronomist','admin')) default 'farmer',
-  display_name text                                 -- optional; no personal data is required by RAY
+  display_name text                                 -- optional; no personal data is required by SATRA
 );
 
 create table if not exists farms (

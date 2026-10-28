@@ -82,12 +82,16 @@ def run_all(at, where: str) -> None:
         words = set(re.findall(r"[؀-ۿ]+", txt))
         coll = [w for w in COLLOQUIAL if w in words] + (["فيه منطقة"] if "فيه منطقة" in txt else [])
         check(not coll, f"{where} page {page}: no colloquial Arabic {coll}")
+        old = [w for w in ("رَيّ", "RAYY", "Rayy") if w in txt] + (["RAY"] if re.search(r"\bRAY\b", txt) else [])
+        check(not old, f"{where} page {page}: old product name not shown {old}")
+        check(any("ساترا" in m.value or "SATRA" in m.value for m in at.markdown)
+              and any("data:image/svg+xml;base64," in m.value for m in at.markdown), f"{where} page {page}: SATRA logo + name rendered")
     # irrigation page: decision support, hedged wording, shortcut to the map
     at.session_state["fpage"] = "water"
     at.run()
     txt = visible_text(at)
     for phrase in ("حالة الري", "ماذا أفعل الآن؟", "لا تغيّر كمية الري قبل التحقق من السبب ميدانيًا.", "أولًا: نظام الري",
-                   "رابعًا: التسميد", "أولوية المناطق", "وليس نظامًا للتحكم التلقائي في الري"):
+                   "رابعًا: التسميد", "أولوية المناطق", "نظامًا للتحكم التلقائي في الري"):
         check(phrase in txt, f"{where}: irrigation page shows «{phrase}»")
     check("تم تشخيص" not in txt and not {"لتر", "لترات", "م³"} & set(re.findall(r"[؀-ۿ³م]+", txt)), f"{where}: irrigation page gives no diagnosis or water volume")
     btn = [b for b in at.button if b.key == "b_irr_map"]
@@ -110,7 +114,7 @@ def run_all(at, where: str) -> None:
     at.button(key="b_prio").click().run()
     check(at.session_state["fpage"] == "zones", f"{where}: 'go to highest priority' opens the zone page")
     txt = visible_text(at)
-    for phrase in ("لماذا ظُهرت هذه المنطقة؟", "قيم المؤشرات الحالية", "جودة البيانات", "المرجع المستخدم للمقارنة",
+    for phrase in ("لماذا ظُهرت هذه المنطقة؟", "ما رصده القمر الصناعي", "جودة البيانات", "المرجع المستخدم للمقارنة",
                    "التفسيرات المحتملة (فرضيات وليست نتائج)", "هذه النتائج مؤشرات أولية وليست تشخيصًا نهائيًا.",
                    "ما الذي ينبغي فحصه؟", "لا تغيّر كمية الري قبل التحقق من السبب ميدانيًا."):
         check(phrase in txt, f"{where}: zone page shows «{phrase}»")
@@ -152,7 +156,7 @@ def main(project: str | None) -> int:
     check(f"المنطقة {top}" in visible_text(at), f"demo: highest-priority zone from the pipeline shown ({top})")
     run_all(at, "demo")
 
-    bad = new_app("earth_engine", "ray-nonexistent-project-000")
+    bad = new_app("earth_engine", "satra-nonexistent-project-000")
     txt = visible_text(bad)
     check("البيانات الحقيقية غير متاحة" in txt, "Earth Engine failure: UNAVAILABLE status shown")
     check("وضع تجريبي" not in txt and "المحاكاة" not in txt and "حالة مزرعتك اليوم" not in txt,

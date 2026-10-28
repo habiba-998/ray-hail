@@ -1,5 +1,5 @@
 {
-  "_about": "Registry of every external source used by RAY's knowledge base. Text in crops.json / problems.json is a short paraphrase or translation of these sources; follow the URL for the full original. date_retrieved = date the page was checked.",
+  "_about": "Registry of every external source used by SATRA's knowledge base. Text in crops.json / problems.json is a short paraphrase or translation of these sources; follow the URL for the full original. date_retrieved = date the page was checked.",
   "sources": {
     "fao_iwm3_ch2": {
       "title": "Irrigation Water Management: Irrigation Water Needs (Training manual no. 3), Chapter 2 – Crop water needs, Table 5",

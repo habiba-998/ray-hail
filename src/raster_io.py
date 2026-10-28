@@ -26,5 +26,5 @@ def array_to_geotiff_bytes(arr: np.ndarray, bounds: tuple[float, float, float, f
         with mem.open(**profile) as dst:
             dst.write(arr.astype("float32"), 1)
             dst.set_band_description(1, description)
-            dst.update_tags(SOURCE="RAY hackathon prototype", NOTE=description)
+            dst.update_tags(SOURCE="SATRA prototype", NOTE=description)
         return mem.read()
