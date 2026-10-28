@@ -130,9 +130,13 @@ start, end, max_cloud = (today - dt.timedelta(days=150), today, 30) if use_ee el
 # ---------------------------------------------------------------------------
 # Header: brand + farm picker; the data-status line is filled once the data are known
 # ---------------------------------------------------------------------------
-def status_row(chip_cls: str, chip_text: str, items: list[tuple[str, str]]) -> str:
-    """Second header row: data-status chip + labelled facts (label above value), so each fact reads on its own."""
-    facts = "".join(f"<div class='fact'><span class='lbl'>{lbl}</span><span class='val'>{val}</span></div>" for lbl, val in items)
+def status_row(chip_cls: str, chip_text: str, items: list[tuple]) -> str:
+    """Second header row: data-status chip + labelled facts (label above value), so each fact reads on its own.
+
+    Items are (label, value) or (label, value, extra_css_class); phones use the classes to merge lines (styles.py).
+    """
+    facts = "".join(f"<div class='fact {it[2] if len(it) > 2 else ''}'><span class='lbl'>{it[0]}</span>"
+                    f"<span class='val'>{it[1]}</span></div>" for it in items)
     return f"<div class='statusbar'><span class='chip {chip_cls}'>{chip_text}</span>{facts}</div>"
 
 
@@ -241,8 +245,8 @@ ctx = Ctx(
 if use_ee:
     fr = status.freshness(date)
     status_slot.markdown(status_row("real", f"🛰️ {t('st_real')}", [
-        (t("hdr_latest"), ltr(date)),
-        (t("hdr_age"), days_ago(fr.age_days)),
+        (t("hdr_latest"), f"{ltr(date)}<span class='age-inline'> · {days_ago(fr.age_days)}</span>"),
+        (t("hdr_age"), days_ago(fr.age_days), "age-fact"),
         (t("hdr_period"), t("hdr_period_val", a=ltr(start), b=ltr(end))),
     ]), unsafe_allow_html=True)
     if fr.stale:

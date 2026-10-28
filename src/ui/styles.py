@@ -52,12 +52,13 @@ html, body, [class*="css"], button, input, textarea, select {{
 .brand-latin {{ font-family:'IBM Plex Sans', 'Segoe UI', sans-serif; font-size:var(--fs-brand-latin); font-weight:700;
   letter-spacing:.3em; color:{GREEN_DARK}; }}
 .brand-sub {{ color:{MUTED}; font-size:var(--fs-body); margin-top:6px; line-height:1.4; }}
-.st-key-header [data-testid="stSelectbox"] label p {{ font-size:var(--fs-xs); font-weight:600; color:{MUTED}; }}
+.st-key-header [data-testid="stSelectbox"] label p {{ font-size:var(--fs-small); font-weight:600; color:{MUTED}; }}
 .statusbar {{ display:flex; flex-wrap:wrap; align-items:center; gap:10px 28px; margin:14px 0 0 0; padding-top:12px;
   border-top:1px solid {LINE}; }}
 .statusbar .fact {{ display:flex; flex-direction:column; gap:1px; }}
-.statusbar .fact .lbl {{ font-size:var(--fs-xs); color:{MUTED}; }}
+.statusbar .fact .lbl {{ font-size:.8rem; color:{MUTED}; }}
 .statusbar .fact .val {{ font-size:.95rem; font-weight:600; color:{INK}; }}
+.statusbar .age-inline {{ display:none; }}
 .chip {{ display:inline-flex; align-items:center; gap:6px; border-radius:999px; padding:4px 12px; font-weight:600;
   font-size:var(--fs-small); line-height:1.4; white-space:nowrap; }}
 .chip.real {{ background:{GREEN_LIGHT}; color:{GREEN}; border:1px solid #BFD9C8; }}
@@ -115,7 +116,8 @@ div.stButton > button[kind="primary"]:hover, div.stFormSubmitButton > button[kin
 .ind-table {{ width:100%; border-collapse:separate; border-spacing:0; background:#fff; border:1px solid {LINE}; border-radius:12px; overflow:hidden; font-size:.95rem; }}
 .ind-table th {{ background:#F4F7F5; color:{MUTED}; font-weight:600; padding:8px 10px; text-align:start; border-bottom:1px solid {LINE}; }}
 .ind-table td {{ padding:8px 10px; border-bottom:1px solid #EEF2EF; }}
-.ind-table tr:last-child td {{ border-bottom:0; }}
+.ind-table tr:last-child td, .ind-table tr:last-child th {{ border-bottom:0; }}
+.ind-table.kv th {{ width:42%; background:#F4F7F5; font-weight:500; border-bottom:1px solid #EEF2EF; }}
 .flag {{ border-radius:999px; padding:1px 10px; font-weight:600; font-size:.85rem; white-space:nowrap; }}
 .flag.yes {{ background:#FDECEB; color:#A12F2B; }} .flag.no {{ background:#EAF6EF; color:#1E5B38; }} .flag.na {{ background:#F1F3F4; color:{MUTED}; }}
 .intro {{ font-size:var(--fs-body); color:{MUTED}; border-inline-start:3px solid {TEAL}; padding:2px 12px; margin:16px 0 2px 0;
@@ -129,19 +131,33 @@ div.stButton > button[kind="primary"]:hover, div.stFormSubmitButton > button[kin
   font-size:.8rem; line-height:22px; margin-bottom:4px; }}
 .checklist {{ padding-inline-start:4px; list-style:none; }}
 .checklist li {{ font-size:1.02rem; margin-bottom:6px; }}
-.status-line {{ font-size:1.1rem; font-weight:600; margin:6px 0; }}
+.status-line {{ font-size:var(--fs-body); font-weight:600; line-height:1.5; margin:6px 0; }}
 .footer {{ color:{MUTED}; font-size:.8rem; text-align:center; margin-top:32px; padding-top:12px; border-top:1px solid {LINE}; }}
+
+/* ---------- large screens: wider column, brand scaled to it ---------- */
+@media (min-width: 1280px) {{
+  [data-testid="stMainBlockContainer"].block-container {{ max-width:1240px; }}
+  :root {{ --fs-brand:3rem; --fs-brand-latin:1.2rem; }}
+  .brand img {{ width:96px; height:96px; flex-basis:96px; }}
+}}
 
 /* ---------- phones ---------- */
 @media (max-width: 720px) {{
   [data-testid="stMainBlockContainer"].block-container {{ padding-left:16px !important; padding-right:16px !important; }}
-  .st-key-header {{ padding:14px 14px 20px 14px; }}
-  .brand {{ gap:12px; }} .brand img {{ width:48px; height:48px; flex-basis:48px; }}
-  :root {{ --fs-brand:1.9rem; --fs-brand-latin:.85rem; --fs-q:1.25rem; }}
-  .brand-sub {{ font-size:.9rem; }}
-  .statusbar {{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px 16px; }}
-  .statusbar .chip {{ grid-column:1 / -1; justify-self:start; }}
-  .statusbar .fact:nth-of-type(3) {{ grid-column:1 / -1; }}  /* analysis period gets the full width */
+  .st-key-header {{ padding:12px 14px 18px 14px; }}
+  .st-key-header [data-testid="stHorizontalBlock"] {{ gap:1rem !important; }}
+  .st-key-header [data-testid="stSelectbox"] {{ margin-top:10px; }}
+  .brand {{ gap:12px; }} .brand img {{ width:56px; height:56px; flex-basis:56px; }}
+  :root {{ --fs-brand:2.1rem; --fs-brand-latin:.9rem; --fs-q:1.25rem; }}
+  .brand-sub {{ font-size:.88rem; margin-top:4px; }}
+  /* status: chip, then one compact "label … value" line per fact */
+  .statusbar {{ display:flex; flex-direction:column; align-items:stretch; gap:5px; margin:10px 0 12px 0; padding-top:10px; }}
+  .statusbar .chip {{ align-self:flex-start; margin-bottom:3px; }}
+  .statusbar .fact {{ flex-direction:row; justify-content:space-between; align-items:baseline; gap:12px; }}
+  .statusbar .fact .lbl {{ font-size:var(--fs-small); }}
+  .statusbar .fact .val {{ font-size:.92rem; text-align:end; }}
+  .statusbar .age-inline {{ display:inline; font-weight:500; color:{MUTED}; }}  /* age joins the date line */
+  .statusbar .fact.age-fact {{ display:none; }}
   .kpis {{ grid-template-columns:repeat(2, minmax(0,1fr)); }}
   .pipeline {{ grid-template-columns:repeat(2, minmax(0,1fr)); }}
   .kpi .n {{ font-size:1.6rem; }}
@@ -165,6 +181,7 @@ RTL_CSS = """
 .zone-card, .card, .note-card, .cause, .legend-big, .databadge, .brand, .statusbar, .kpis, .intro, .pipeline, .brand-text {
   direction: rtl; text-align: right; }
 .st-key-topnav [data-testid="stButtonGroup"], .st-key-header [data-testid="stHorizontalBlock"], .ind-table { direction: rtl; }
+[data-testid="stMain"] .stMarkdown ul, [data-testid="stMain"] .stMarkdown ol, [data-testid="stMain"] .stMarkdown li { direction: rtl; text-align: right; }
 </style>
 """
 

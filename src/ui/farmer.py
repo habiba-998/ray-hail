@@ -322,8 +322,9 @@ def page_log(c: Ctx) -> None:
             cond = st.radio(t("log_condition"), list(storage.CONDITIONS), format_func=lambda v: t(f"cond_{v}"), index=2, key="log_cond")
             irr = st.radio(t("log_irrigation"), list(storage.IRRIGATION_ISSUE), format_func=lambda v: t(f"irr_{v}"), index=2,
                            horizontal=True, key="log_irr")
-            alt = st.multiselect(t("log_alt"), list(storage.ALT_CAUSES), format_func=lambda v: t(f"alt_{v}"), key="log_alt")
-            moist = st.number_input(t("log_moisture"), min_value=0.0, max_value=100.0, value=0.0, step=1.0, key="log_moist")
+            alt = st.multiselect(t("log_alt"), list(storage.ALT_CAUSES), format_func=lambda v: t(f"alt_{v}"), key="log_alt",
+                                 placeholder=t("log_alt_placeholder"))
+            moist = st.number_input(t("log_moisture"), min_value=0.0, max_value=100.0, value=0.0, step=1.0, format="%.1f", key="log_moist")
             by = st.text_input(t("log_inspector"), max_chars=60, key="log_by")
             notes = st.text_area(t("notes"), max_chars=500, key="log_notes")
             submitted = st.form_submit_button(t("btn_log_save"), type="primary")

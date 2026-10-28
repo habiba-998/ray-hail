@@ -76,7 +76,7 @@ class ERA5LandConnector:
         return ConnectorStatus(self.id, self.name, self.name_ar, ok,
                                "Active via Google Earth Engine (reanalysis, ~11 km, delayed by several days)." if ok
                                else "Unavailable (Earth Engine not connected).",
-                               "متصل عبر Google Earth Engine (إعادة تحليل، ~١١ كم، يتأخر عدة أيام)." if ok
+                               "متصل عبر Google Earth Engine (إعادة تحليل، ~11 كم، يتأخر عدة أيام)." if ok
                                else "غير متاح (Earth Engine غير متصل).")
 
     def fetch(self, lat, lon, start, end) -> pd.DataFrame | None:

@@ -50,7 +50,7 @@ def ee_connect(project: str, sa_json: str | None) -> tuple[bool, str]:
     key = (project or None, sa_json)
     if _EE_STATE.get("key") == key and _EE_STATE.get("ok"):
         return True, _EE_STATE["msg"]
-    with st.spinner("Connecting to Google Earth Engine…"):
+    with st.spinner("جارٍ الاتصال بخدمة الصور الفضائية…"):
         ok, msg = gee.init_earth_engine(project or None, sa_json)
     _EE_STATE.update(key=key, ok=ok, msg=msg)
     return ok, msg
@@ -322,14 +322,14 @@ LIMITATIONS: list[tuple[str, str]] = [
      "للمعايرة مستقبلًا، و" + NAME_AR + " لا تتعلم تلقائيًا."),
     ("Weather comes from ERA5-Land reanalysis (~11 km grid, published several days late). The National Center for "
      "Meteorology is not connected: its data require a licence.",
-     "بيانات الطقس من ERA5-Land (شبكة ~١١ كم وتُنشر متأخرة عدة أيام). المركز الوطني للأرصاد غير متصل لأن بياناته تتطلب ترخيصًا."),
+     "بيانات الطقس من ERA5-Land (شبكة ~11 كم وتُنشر متأخرة عدة أيام). المركز الوطني للأرصاد غير متصل لأن بياناته تتطلب ترخيصًا."),
     ("Sentinel-1 radar is shown as context only and is not used in the scores (no local calibration).",
      "رادار Sentinel-1 يُعرض كسياق فقط ولا يدخل في التقييم (لا توجد معايرة محلية)."),
     ("No IoT sensors are connected in this version.", "لا توجد حساسات (IoT) متصلة في هذه النسخة."),
     ("Field validation is required before relying on the results.", "يلزم التحقق الميداني قبل الاعتماد على النتائج."),
     ("Landsat surface temperature is a ±12-day composite at 100 m: it is not simultaneous with the Sentinel-2 image and "
      "not directly comparable with the 20 m indices.",
-     "حرارة سطح Landsat وسيط لصور ±١٢ يومًا بدقة ١٠٠ م: لا تتزامن مع صورة Sentinel-2 ولا تقارَن مباشرة بمؤشرات ٢٠ م."),
+     "حرارة سطح Landsat وسيط لصور ±12 يومًا بدقة 100 م: لا تتزامن مع صورة Sentinel-2 ولا تقارَن مباشرة بمؤشرات 20 م."),
     ("Field-inspection records are typed notes, not verified ground truth.",
      "سجلات الفحص الميداني ملاحظات مكتوبة وليست حقيقة ميدانية موثّقة."),
 ]

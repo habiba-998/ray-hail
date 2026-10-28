@@ -36,19 +36,20 @@ def render(c: Ctx) -> None:
     rows = {
         tr("Data status", "حالة البيانات"): status,
         tr("Sentinel-2 date used", "تاريخ Sentinel-2 المستخدم"): c.date,
-        tr("Earlier date for change", "التاريخ السابق لحساب التغير"): c.prev_date or tr("none (≥10 days earlier not available)", "لا يوجد (لا توجد صورة قبل ١٠ أيام أو أكثر)"),
-        tr("Landsat thermal dates (±12 days)", "تواريخ Landsat الحرارية (±١٢ يومًا)"): ", ".join(lst_dates) or tr("none available", "غير متاحة"),
+        tr("Earlier date for change", "التاريخ السابق لحساب التغير"): c.prev_date or tr("none (≥10 days earlier not available)", "لا يوجد (لا توجد صورة قبل 10 أيام أو أكثر)"),
+        tr("Landsat thermal dates (±12 days)", "تواريخ Landsat الحرارية (±12 يومًا)"): ", ".join(lst_dates) or tr("none available", "غير متاحة"),
         tr("Farm median NDVI (cropped zones)", "وسيط NDVI للمزرعة (المناطق المزروعة)"): fmt(c.ref.get("ndvi_median")),
         tr("Farm mean LST °C", "متوسط حرارة السطح للمزرعة °م"): fmt(c.ref.get("lst_mean"), 1),
         tr("Isolation Forest features / pixels", "ميزات Isolation Forest / عدد البكسلات"): f"{', '.join(c.if_feats) or '—'} / {len(c.pix) if c.pix is not None else 0} ({tr('sampled', 'من أصل')} {n_pix})",
     }
-    st.table(pd.Series(rows, name="").to_frame())
+    st.markdown("<table class='ind-table kv'><tbody>" + "".join(f"<tr><th>{k}</th><td>{v}</td></tr>" for k, v in rows.items())
+                + "</tbody></table>", unsafe_allow_html=True)
 
     with st.expander(tr("Data sources", "مصادر البيانات"), expanded=False):
         st.markdown(
-            f"- **Sentinel-2 L2A** `{config.S2_COLLECTION}` – {tr('surface reflectance, 10–20 m, ~5-day revisit. Used for NDVI/NDRE/NDMI.', 'انعكاس سطحي بدقة ١٠–٢٠ م وزيارة كل ~٥ أيام. يُستخدم لحساب NDVI/NDRE/NDMI.')}\n"
-            f"- **Landsat 8/9 C2 L2** `{config.L8_COLLECTION}`, `{config.L9_COLLECTION}` – {tr('surface temperature (ST_B10), 100 m native, composite of ±12 days around the Sentinel-2 date.', 'حرارة السطح (ST_B10) بدقة ١٠٠ م، وهي وسيط لصور ±١٢ يومًا حول تاريخ Sentinel-2.')}\n"
-            f"- **ERA5-Land** `{config.ERA5_COLLECTION}` – {tr('daily reanalysis (~11 km). Environmental CONTEXT only; not a field-level soil-moisture measurement.', 'إعادة تحليل يومية (~١١ كم). سياق بيئي فقط وليست قياسًا لرطوبة التربة على مستوى الحقل.')}\n"
+            f"- **Sentinel-2 L2A** `{config.S2_COLLECTION}` – {tr('surface reflectance, 10–20 m, ~5-day revisit. Used for NDVI/NDRE/NDMI.', 'انعكاس سطحي بدقة 10–20 م وزيارة كل ~5 أيام. يُستخدم لحساب NDVI/NDRE/NDMI.')}\n"
+            f"- **Landsat 8/9 C2 L2** `{config.L8_COLLECTION}`, `{config.L9_COLLECTION}` – {tr('surface temperature (ST_B10), 100 m native, composite of ±12 days around the Sentinel-2 date.', 'حرارة السطح (ST_B10) بدقة 100 م، وهي وسيط لصور ±12 يومًا حول تاريخ Sentinel-2.')}\n"
+            f"- **ERA5-Land** `{config.ERA5_COLLECTION}` – {tr('daily reanalysis (~11 km). Environmental CONTEXT only; not a field-level soil-moisture measurement.', 'إعادة تحليل يومية (~11 كم). سياق بيئي فقط وليست قياسًا لرطوبة التربة على مستوى الحقل.')}\n"
             f"- **Sentinel-1** – {tr('not used in scoring.', 'لا يدخل في التقييم.')}\n"
             f"- **Esri World Imagery** – {tr('basemap only.', 'خريطة أساس فقط.')}")
 
@@ -57,12 +58,12 @@ def render(c: Ctx) -> None:
         for k, v in INDEX_INFO.items():
             st.markdown(f"**{k}** – {v['ar'] if is_ar() else v['name']}  \n`{v['formula']}`  \n{tr('Native resolution', 'الدقة الأصلية')}: {res[k]}")
         st.caption(tr("The indices do NOT share one resolution. Earth Engine resamples the 20 m bands when they are combined with 10 m bands, and zone statistics are reduced at 20 m. These indices are proxies for canopy condition; they are not measurements of root-zone soil moisture or delivered irrigation volume.",
-                      "لا تتشارك المؤشرات الدقة نفسها. يعيد Earth Engine أخذ عينات الحزم ٢٠ م عند دمجها مع حزم ١٠ م، وتُحسب إحصاءات المناطق بدقة ٢٠ م. هذه المؤشرات بدائل لحالة الغطاء النباتي وليست قياسًا لرطوبة منطقة الجذور أو لكمية الري."))
+                      "لا تتشارك المؤشرات الدقة نفسها. يعيد Earth Engine أخذ عينات الحزم 20 م عند دمجها مع حزم 10 م، وتُحسب إحصاءات المناطق بدقة 20 م. هذه المؤشرات بدائل لحالة الغطاء النباتي وليست قياسًا لرطوبة منطقة الجذور أو لكمية الري."))
 
     with st.expander(tr("Data quality rules", "قواعد جودة البيانات"), expanded=False):
         st.markdown(
             f"- {tr('Sentinel-2 pixels with SCL classes', 'تُستبعد بكسلات Sentinel-2 ذات فئات SCL')} {config.S2_SCL_INVALID} {tr('(no data, saturated, cloud shadow, medium/high cloud, thin cirrus, snow) are masked.', '(بلا بيانات، مشبعة، ظل سحاب، سحب متوسطة/كثيفة، سحب رقيقة، ثلج).')}\n"
-            f"- {tr('Landsat: dilated cloud, cirrus, cloud and cloud shadow bits of QA_PIXEL are masked; scene cloud cover < 60 %.', 'Landsat: تُستبعد بتات السحب الموسعة والسحب الرقيقة والسحب وظل السحب في QA_PIXEL، مع نسبة سحب للمشهد أقل من ٦٠٪.')}\n"
+            f"- {tr('Landsat: dilated cloud, cirrus, cloud and cloud shadow bits of QA_PIXEL are masked; scene cloud cover < 60 %.', 'Landsat: تُستبعد بتات السحب الموسعة والسحب الرقيقة والسحب وظل السحب في QA_PIXEL، مع نسبة سحب للمشهد أقل من 60٪.')}\n"
             f"- {tr('A date is used only if the farm area is at least', 'لا يُستخدم تاريخ إلا إذا كانت منطقة المزرعة صافية بنسبة')} {config.MIN_CLEAR_FRACTION:.0%} {tr('clear.', 'على الأقل.')}\n"
             f"- {tr('A zone is a crop zone if at least', 'تُعدّ المنطقة مزروعة إذا كان')} {config.MIN_VEG_FRACTION:.0%} {tr('of its clear pixels have NDVI >', 'على الأقل من بكسلاتها الصافية بقيمة NDVI أكبر من')} {config.VEG_NDVI_MIN}.\n"
             f"- {tr('A zone needs ≥', 'تحتاج المنطقة إلى')} {config.MIN_INDICATORS} {tr('evaluable indicators, otherwise it is “Insufficient data” (a single indicator never decides a class).', 'مؤشرات قابلة للتقييم على الأقل، وإلا فهي «بيانات غير كافية» (لا يحسم مؤشر واحد الفئة).')}\n"
@@ -70,18 +71,18 @@ def render(c: Ctx) -> None:
 
     with st.expander(tr("Zone geometry", "هندسة المناطق"), expanded=False):
         st.markdown(tr("Zones are a regular 4×4 grid over a square area (~4 km × 4 km). They are an analysis grid, not verified field, parcel or irrigation-pivot boundaries; one pivot can span several zones and one zone can contain several fields. Real boundaries are required before any statement about a specific pivot.",
-                       "المناطق شبكة منتظمة ٤×٤ فوق مربع (~٤ كم × ٤ كم). هي شبكة تحليل وليست حدود حقول أو قطع أو محاور ري موثّقة؛ فقد يمتد محور واحد على عدة مناطق وقد تضم منطقة واحدة عدة حقول. تلزم الحدود الفعلية قبل أي حديث عن محور محدد."))
+                       "المناطق شبكة منتظمة 4×4 فوق مربع (~4 كم × 4 كم). هي شبكة تحليل وليست حدود حقول أو قطع أو محاور ري موثّقة؛ فقد يمتد محور واحد على عدة مناطق وقد تضم منطقة واحدة عدة حقول. تلزم الحدود الفعلية قبل أي حديث عن محور محدد."))
 
     with st.expander(tr("Thresholds and priority index (provisional)", "العتبات ومؤشر الأولوية (مؤقتة)"), expanded=False):
         st.warning(tr("All thresholds are provisional screening rules. They are NOT calibrated against field data in Hail and are the same for every crop.",
                       "كل العتبات قواعد فحص أولية مؤقتة، وغير معايَرة ميدانيًا في حائل، وهي نفسها لكل المحاصيل."))
         st.dataframe(pd.DataFrame([{"parameter": k, "value": v} for k, v in asdict(c.thr).items()]), hide_index=True)
         st.markdown(tr("Priority index = points ÷ maximum possible points over the indicators that could be evaluated (each indicator gives 0, 1 or 2 points). It orders zones for inspection; it is a heuristic, **not a probability**, and it is not calibrated. Class: index ≥ red_share → needs inspection; ≥ yellow_share → needs follow-up.",
-                       "مؤشر الأولوية = النقاط ÷ أقصى نقاط ممكنة للمؤشرات التي أمكن تقييمها (كل مؤشر يعطي ٠ أو ١ أو ٢). يرتب المناطق للفحص، وهو قاعدة تقريبية **وليس احتمالًا** وغير معايَر. الفئة: المؤشر ≥ red_share → يحتاج إلى فحص؛ ≥ yellow_share → يحتاج إلى متابعة."))
+                       "مؤشر الأولوية = النقاط ÷ أقصى نقاط ممكنة للمؤشرات التي أمكن تقييمها (كل مؤشر يعطي 0 أو 1 أو 2). يرتب المناطق للفحص، وهو قاعدة تقريبية **وليس احتمالًا** وغير معايَر. الفئة: المؤشر ≥ red_share → يحتاج إلى فحص؛ ≥ yellow_share → يحتاج إلى متابعة."))
 
     with st.expander(tr("Temporal analysis", "التحليل عبر الزمن"), expanded=False):
         st.markdown(tr(f"For one zone, the latest NDVI is compared with the median of the up-to-3 preceding clear observations of the SAME zone. It needs at least {config.TREND_MIN_OBS} clear observations, otherwise the result is “insufficient data”. A drop larger than {config.TREND_DROP} (provisional) is a decline; if the previous observation was also lower, it is a repeated decline. No seasonal baseline, crop type or growth stage is modelled, so harvest, cutting, planting and phenology also appear as changes.",
-                       f"لمنطقة واحدة، تُقارَن أحدث قيمة NDVI بوسيط ما يصل إلى ٣ ملاحظات صافية سابقة للمنطقة نفسها. يلزم {config.TREND_MIN_OBS} ملاحظات صافية على الأقل وإلا فالنتيجة «بيانات غير كافية». الانخفاض الذي يتجاوز {config.TREND_DROP} (قيمة مؤقتة) يُعد تراجعًا، وإذا كانت الملاحظة السابقة أقل أيضًا فهو تراجع متكرر. لا تُنمذج خطوط أساس موسمية ولا نوع المحصول ولا مرحلة النمو، لذلك يظهر الحصاد والحش والزراعة والتغيرات الموسمية أيضًا كتغيرات."))
+                       f"لمنطقة واحدة، تُقارَن أحدث قيمة NDVI بوسيط ما يصل إلى 3 ملاحظات صافية سابقة للمنطقة نفسها. يلزم {config.TREND_MIN_OBS} ملاحظات صافية على الأقل وإلا فالنتيجة «بيانات غير كافية». الانخفاض الذي يتجاوز {config.TREND_DROP} (قيمة مؤقتة) يُعد تراجعًا، وإذا كانت الملاحظة السابقة أقل أيضًا فهو تراجع متكرر. لا تُنمذج خطوط أساس موسمية ولا نوع المحصول ولا مرحلة النمو، لذلك يظهر الحصاد والحش والزراعة والتغيرات الموسمية أيضًا كتغيرات."))
 
     with st.expander("Isolation Forest", expanded=False):
         st.markdown(tr(f"Unsupervised detector of unusual combinations of NDVI/NDRE/NDMI(/LST) among the cropped pixels sampled from THIS farm on THIS date (reference population = the farm itself). `contamination={ml.IF_CONTAMINATION}` fixes that ~{ml.IF_CONTAMINATION:.0%} of pixels are flagged by construction, so the flagged share is a model setting, not a finding; a zone matters only when its share is well above that. Zones with fewer than {config.MIN_ZONE_PIXELS} sampled pixels get no value. It is a secondary hint: it is not a probability of water stress and does not identify a cause.",

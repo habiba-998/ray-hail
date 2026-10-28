@@ -97,7 +97,7 @@ S: dict[str, tuple[str, str]] = {
     "ref_image": ("Reference image (not from your farm)", "صورة مرجعية (ليست من مزرعتك)"),
     # --- field inspection log (non-photographic) -------------------------------------
     "nav_log": (":material/assignment: Field inspections", ":material/assignment: سجل الفحص"),
-    "log_title": ("📋 Field inspection log", "📋 سجل الفحص الميداني"),
+    "log_title": ("Field inspection log", "سجل الفحص الميداني"),
     "log_intro": ("Record what you found after visiting an area. These records are your own notes: they are not verified measurements, but they let " + NAME_EN + " be checked against the field later.",
                   "سجّل ما وجدته بعد زيارة المنطقة. هذه ملاحظاتك الشخصية وليست قياسات موثّقة، لكنها تسمح بمقارنة نتائج " + NAME_AR + " بالواقع الميداني لاحقًا."),
     "save_failed": ("Saving failed. Please try again.", "تعذّر الحفظ. يُرجى المحاولة مرة أخرى."),
@@ -109,6 +109,7 @@ S: dict[str, tuple[str, str]] = {
     "cond_not_sure": ("Not sure", "غير متأكد"),
     "log_irrigation": ("Was there a problem in the irrigation system? *", "هل وُجدت مشكلة في نظام الري؟ *"),
     "irr_yes": ("Yes", "نعم"), "irr_no": ("No", "لا"), "irr_not_checked": ("Not checked", "لم أتحقق"),
+    "log_alt_placeholder": ("Choose causes", "اختر الأسباب"),
     "log_alt": ("Other possible causes you noticed (optional)", "أسباب أخرى محتملة لاحظتها (اختياري)"),
     "alt_heat": ("Heat", "الحرارة"), "alt_salinity": ("Salinity", "الملوحة"), "alt_disease": ("Disease", "مرض"),
     "alt_pest": ("Pests", "آفات"), "alt_nutrient": ("Nutrient shortage", "نقص العناصر الغذائية"),
@@ -134,7 +135,7 @@ S: dict[str, tuple[str, str]] = {
                   "هذه سجلات قليلة، ولا تدل على دقة " + NAME_AR + " بعد (يلزم {m} فحصًا على الأقل للمناطق المُعلَّمة)."),
     "val_none": ("No comparable records yet.", "لا توجد سجلات قابلة للمقارنة بعد."),
     # --- irrigation -------------------------------------------------------------
-    "irr_title": ("💧 Irrigation", "💧 الري"),
+    "irr_title": ("Irrigation", "الري"),
     "irr_dss": (NAME_EN + " does not control the irrigation system and does not set the amount of water automatically.",
                 NAME_AR + " لا تتحكم في نظام الري ولا تحدد كمية المياه تلقائيًا."),
     "irr_list": ("Checklist before changing irrigation", "قائمة الفحص قبل تغيير الري"),
@@ -258,10 +259,10 @@ S: dict[str, tuple[str, str]] = {
     "z_values": ("Current indicator values", "قيم المؤشرات الحالية"),
     "z_quality": ("Data quality", "جودة البيانات"),
     "z_quality_line": ("Clear (cloud-free) pixels: {clear}% · crop cover: {veg}% · indicators evaluated: {n} of 5",
-                       "البكسلات الصافية (بلا غيوم): {clear}٪ · الغطاء النباتي: {veg}٪ · المؤشرات المقيّمة: {n} من ٥"),
+                       "البكسلات الصافية (بلا غيوم): {clear}٪ · الغطاء النباتي: {veg}٪ · المؤشرات المقيّمة: {n} من 5"),
     "z_reference": ("Reference used for comparison", "المرجع المستخدم للمقارنة"),
     "z_reference_text": ("The area is compared with the median of the cropped areas of the same farm on the same date (vegetation index {ndvi}), and with the closest earlier image at least 10 days before ({prev}). These thresholds are provisional screening rules, not calibrated against field data.",
-                         "تُقارَن المنطقة بوسيط المناطق المزروعة في المزرعة نفسها في التاريخ نفسه (مؤشر الغطاء النباتي {ndvi})، وبأقرب صورة سابقة بفارق ١٠ أيام على الأقل ({prev}). هذه العتبات قواعد فحص أولية وليست معايَرة ميدانيًا."),
+                         "تُقارَن المنطقة بوسيط المناطق المزروعة في المزرعة نفسها في التاريخ نفسه (مؤشر الغطاء النباتي {ndvi})، وبأقرب صورة سابقة بفارق 10 أيام على الأقل ({prev}). هذه العتبات قواعد فحص أولية وليست معايَرة ميدانيًا."),
     "z_reference_noprev": ("no earlier image available", "لا توجد صورة سابقة مناسبة"),
     "z_alt": ("Possible explanations (hypotheses, not findings)", "التفسيرات المحتملة (فرضيات وليست نتائج)"),
     "tr_insufficient": ("Insufficient data for a comparison over time ({n} clear images; at least {m} are needed).",
@@ -309,7 +310,7 @@ S: dict[str, tuple[str, str]] = {
     "ind_help_ndre": ("**Leaf greenness**: sensitive to chlorophyll in dense crops. Low values can come from water stress, nutrient shortage or disease.",
                       "**خضرة الأوراق**: حساس للكلوروفيل في المحاصيل الكثيفة. القيم المنخفضة قد تنتج عن إجهاد مائي أو نقص عناصر أو مرض."),
     "ind_help_lst": ("**Surface temperature** (thermal satellite): a crop warmer than the rest of the farm may transpire less. It is coarse (100 m) and taken on a different day than the other images.",
-                     "**حرارة السطح** (قمر صناعي حراري): المحصول الأدفأ من بقية المزرعة قد يكون نتحه أقل. دقتها المكانية أقل (١٠٠ م) وتُلتقط في يوم مختلف عن الصور الأخرى."),
+                     "**حرارة السطح** (قمر صناعي حراري): المحصول الأدفأ من بقية المزرعة قد يكون نتحه أقل. دقتها المكانية أقل (100 م) وتُلتقط في يوم مختلف عن الصور الأخرى."),
     "ind_help_dndvi": ("**Change since an earlier image**: shows a recent decline. Harvest or cutting also produce a decline.",
                        "**التغير منذ صورة سابقة**: يُظهر التراجع الحديث، والحصاد أو الحش يسببان تراجعًا أيضًا."),
     "missing_ind": ("Not available for this area: {names}. These indicators are left out of the assessment; nothing is estimated in their place.",
@@ -323,11 +324,11 @@ S: dict[str, tuple[str, str]] = {
     "log_err_condition": ("choose what you found", "اختيار ما وجدته"),
     "log_err_irrigation_issue": ("answer the irrigation question", "الإجابة عن سؤال نظام الري"),
     "log_err_inspection_date": ("the inspection date", "تاريخ الفحص"),
-    "log_err_soil_moisture_pct": ("soil moisture must be between 0 and 100", "رطوبة التربة يجب أن تكون بين ٠ و١٠٠"),
+    "log_err_soil_moisture_pct": ("soil moisture must be between 0 and 100", "رطوبة التربة يجب أن تكون بين 0 و100"),
     "log_err_alt_causes": ("the list of other causes", "قائمة الأسباب الأخرى"),
     "log_storage_hint": ("Storage: {note}", "الحفظ: {note}"),
     "pipe_title": ("How the analysis works", "كيف يعمل التحليل"),
-    "pipe_1": ("Observe", "الرصد"), "pipe_1d": ("Sentinel-2 images (10–20 m) and Landsat temperature", "صور Sentinel-2 (١٠–٢٠ م) وحرارة Landsat"),
+    "pipe_1": ("Observe", "الرصد"), "pipe_1d": ("Sentinel-2 images (10–20 m) and Landsat temperature", "صور Sentinel-2 (10–20 م) وحرارة Landsat"),
     "pipe_2": ("Clean", "التنقية"), "pipe_2d": ("Clouds, shadows and invalid pixels removed", "إزالة الغيوم والظلال والبكسلات غير الصالحة"),
     "pipe_3": ("Measure", "القياس"), "pipe_3d": ("NDVI, NDRE, NDMI and temperature per zone", "NDVI وNDRE وNDMI والحرارة لكل منطقة"),
     "pipe_4": ("Screen", "الفحص الأولي"), "pipe_4d": ("Provisional rules + secondary anomaly hint", "قواعد مؤقتة + تلميح ثانوي للأنماط غير المعتادة"),
@@ -408,7 +409,7 @@ def count_areas(n: int, kind: str) -> str:
 
 
 def days_ago(n: int | None) -> str:
-    """'N days ago' with Arabic number agreement (اليوم / قبل يوم واحد / قبل يومين / قبل ٣ أيام / قبل ١٥ يومًا)."""
+    """'N days ago' with Arabic number agreement (اليوم / قبل يوم واحد / قبل يومين / قبل 3 أيام / قبل 15 يومًا)."""
     if n is None:
         return "—"
     if not is_ar():
