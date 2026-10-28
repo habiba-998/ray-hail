@@ -36,25 +36,40 @@ html, body, [class*="css"], button, input, textarea, select {{
 [data-testid="stMainBlockContainer"].block-container {{ padding-top: 3.2rem !important; max-width: 1120px; }}
 [data-testid="stAppViewContainer"], [data-testid="stMain"] {{ background:{P["paper"]}; }}
 
-/* ---------- header ---------- */
-.st-key-header {{ background:#fff; border:1px solid {LINE}; border-top:3px solid {TEAL}; border-radius:14px; padding:10px 16px 18px 16px; }}
-.brand {{ display:flex; align-items:center; gap:12px; }}
-.brand img {{ height:58px; }}
-.brand h1 {{ margin:0; padding:0; font-size:1.95rem; font-weight:700; color:{GREEN_DARK}; line-height:1.1; }}
-.brand .latin {{ font-family:'IBM Plex Sans', 'Segoe UI', sans-serif; font-size:.78rem; font-weight:700; letter-spacing:.32em;
-  color:{TEAL}; margin-inline-start:10px; vertical-align:middle; }}
-.brand .sub {{ color:{MUTED}; font-size:.92rem; margin-top:2px; }}
-.statusbar {{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; margin:10px 0 2px 0; font-size:.92rem; color:{MUTED}; }}
-.chip {{ display:inline-flex; align-items:center; gap:6px; border-radius:999px; padding:3px 12px; font-weight:600; font-size:.88rem; }}
-.chip.real {{ background:{GREEN_LIGHT}; color:{GREEN_DARK}; border:1px solid #BFD9C8; }}
-.chip.demo {{ background:#FFF6DD; color:#6B4A00; border:1px solid #E8B21E; }}
-.chip.unavailable {{ background:#FDECEB; color:#7A1F1B; border:1px solid #D64541; }}
-.databadge {{ border-radius:12px; padding:10px 14px; font-weight:500; font-size:.95rem; margin:10px 0 4px 0; }}
-.databadge.demo {{ background:#FFF6DD; border:1px solid #E8B21E; border-inline-start:6px solid #E8B21E; color:#5C3F00; font-weight:600; }}
-.databadge.unavailable {{ background:#FDECEB; border:1px solid #D64541; border-inline-start:6px solid #D64541; color:#7A1F1B; font-weight:700; }}
+/* ---------- type scale (one place) ----------
+   brand 2.75rem · page question 1.5rem · section 1.1rem · body 1rem · nav .95rem · labels / chips .85rem · captions .8rem */
+:root {{ --fs-brand:2.75rem; --fs-brand-latin:1.1rem; --fs-q:1.5rem; --fs-h2:1.1rem; --fs-body:1rem; --fs-nav:.95rem;
+  --fs-small:.85rem; --fs-xs:.78rem; --radius:12px; }}
+
+/* ---------- header: row 1 = brand + farm picker, row 2 = data status ---------- */
+.st-key-header {{ background:#fff; border:1px solid {LINE}; border-top:3px solid {TEAL}; border-radius:14px;
+  padding:16px 20px 22px 20px; gap:.25rem; }}
+.brand {{ display:flex; align-items:center; gap:16px; min-width:0; }}
+.brand img {{ width:84px; height:84px; flex:0 0 84px; display:block; }}
+.brand-text {{ min-width:0; }}
+.brand-name {{ font-size:var(--fs-brand); font-weight:700; color:{GREEN}; line-height:1.05; margin:0;
+  display:flex; align-items:baseline; flex-wrap:wrap; gap:4px 14px; }}
+.brand-latin {{ font-family:'IBM Plex Sans', 'Segoe UI', sans-serif; font-size:var(--fs-brand-latin); font-weight:700;
+  letter-spacing:.3em; color:{GREEN_DARK}; }}
+.brand-sub {{ color:{MUTED}; font-size:var(--fs-body); margin-top:6px; line-height:1.4; }}
+.st-key-header [data-testid="stSelectbox"] label p {{ font-size:var(--fs-xs); font-weight:600; color:{MUTED}; }}
+.statusbar {{ display:flex; flex-wrap:wrap; align-items:center; gap:10px 28px; margin:14px 0 0 0; padding-top:12px;
+  border-top:1px solid {LINE}; }}
+.statusbar .fact {{ display:flex; flex-direction:column; gap:1px; }}
+.statusbar .fact .lbl {{ font-size:var(--fs-xs); color:{MUTED}; }}
+.statusbar .fact .val {{ font-size:.95rem; font-weight:600; color:{INK}; }}
+.chip {{ display:inline-flex; align-items:center; gap:6px; border-radius:999px; padding:4px 12px; font-weight:600;
+  font-size:var(--fs-small); line-height:1.4; white-space:nowrap; }}
+.chip.real {{ background:{GREEN_LIGHT}; color:{GREEN}; border:1px solid #BFD9C8; }}
+.chip.demo {{ background:#FCF3E2; color:#7A5410; border:1px solid {P["amber"]}; }}
+.chip.unavailable {{ background:#FBEDEC; color:#9B3434; border:1px solid {P["red"]}; }}
+.databadge {{ border-radius:var(--radius); padding:10px 14px; font-weight:500; font-size:.95rem; margin:10px 0 4px 0; }}
+.databadge.demo {{ background:#FCF3E2; border:1px solid {P["amber"]}; border-inline-start:6px solid {P["amber"]}; color:#5C3F00; font-weight:600; }}
+.databadge.unavailable {{ background:#FBEDEC; border:1px solid {P["red"]}; border-inline-start:6px solid {P["red"]}; color:#7A1F1B; font-weight:700; }}
 
 /* ---------- navigation (one row of segments under the header) ---------- */
-.st-key-topnav [data-testid="stButtonGroup"] button {{ min-height:42px; font-size:.95rem; }}
+.st-key-topnav {{ margin-top:.25rem; }}
+.st-key-topnav [data-testid="stButtonGroup"] button {{ min-height:42px; font-size:var(--fs-nav); border-radius:10px; }}
 
 /* ---------- controls: large touch targets ---------- */
 div.stButton > button, div.stFormSubmitButton > button {{ min-height:50px; font-size:1.02rem; font-weight:600; border-radius:12px; }}
@@ -65,8 +80,8 @@ div.stButton > button[kind="primary"]:hover, div.stFormSubmitButton > button[kin
 [data-testid="stExpander"] details {{ border-radius:12px; border-color:{LINE}; background:#fff; }}
 
 /* ---------- page typography ---------- */
-.q {{ font-size:1.45rem; font-weight:700; color:{INK}; margin:14px 0 10px 0; }}
-.section-title {{ font-size:1.05rem; font-weight:700; color:{GREEN_DARK}; margin:22px 0 8px 0; padding-inline-start:10px;
+.q {{ font-size:var(--fs-q); font-weight:700; color:{GREEN_DARK}; line-height:1.3; margin:18px 0 10px 0; }}
+.section-title {{ font-size:var(--fs-h2); font-weight:700; color:{GREEN_DARK}; margin:22px 0 8px 0; padding-inline-start:10px;
   border-inline-start:4px solid {TEAL}; line-height:1.3; }}
 .muted {{ color:{MUTED}; font-size:.94rem; }}
 
@@ -77,7 +92,7 @@ div.stButton > button[kind="primary"]:hover, div.stFormSubmitButton > button[kin
 .kpis {{ display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:10px; margin:4px 0 6px 0; }}
 .kpi {{ background:#fff; border:1px solid {LINE}; border-top:5px solid; border-radius:12px; padding:12px 12px 10px 12px; }}
 .kpi .n {{ font-size:2rem; font-weight:700; line-height:1.05; }}
-.kpi .l {{ font-size:.92rem; color:{INK}; margin-top:4px; line-height:1.35; }}
+.kpi .l {{ font-size:var(--fs-small); color:{INK}; margin-top:4px; line-height:1.35; }}
 .meta {{ color:{MUTED}; font-size:.9rem; margin-top:6px; }}
 .zone-card {{ border-radius:14px; padding:14px 16px; background:#fff; border:1px solid {LINE}; border-inline-start:8px solid; }}
 .zone-card .top {{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; }}
@@ -103,8 +118,8 @@ div.stButton > button[kind="primary"]:hover, div.stFormSubmitButton > button[kin
 .ind-table tr:last-child td {{ border-bottom:0; }}
 .flag {{ border-radius:999px; padding:1px 10px; font-weight:600; font-size:.85rem; white-space:nowrap; }}
 .flag.yes {{ background:#FDECEB; color:#A12F2B; }} .flag.no {{ background:#EAF6EF; color:#1E5B38; }} .flag.na {{ background:#F1F3F4; color:{MUTED}; }}
-.intro {{ font-size:1.02rem; color:{INK}; background:#fff; border:1px solid {LINE}; border-inline-start:4px solid {TEAL};
-  border-radius:12px; padding:10px 14px; margin:12px 0 2px 0; }}
+.intro {{ font-size:var(--fs-body); color:{MUTED}; border-inline-start:3px solid {TEAL}; padding:2px 12px; margin:16px 0 2px 0;
+  line-height:1.6; }}
 .about-logo img {{ width:min(360px, 90%); display:block; margin:6px 0 12px 0; }}
 .pipeline {{ display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:8px; margin:4px 0 10px 0; }}
 .pipeline .step {{ background:#fff; border:1px solid {LINE}; border-top:4px solid {TEAL}; border-radius:12px; padding:10px; }}
@@ -120,10 +135,16 @@ div.stButton > button[kind="primary"]:hover, div.stFormSubmitButton > button[kin
 /* ---------- phones ---------- */
 @media (max-width: 720px) {{
   [data-testid="stMainBlockContainer"].block-container {{ padding-left:16px !important; padding-right:16px !important; }}
-  .brand h1 {{ font-size:1.35rem; }} .brand img {{ height:34px; }}
+  .st-key-header {{ padding:14px 14px 20px 14px; }}
+  .brand {{ gap:12px; }} .brand img {{ width:48px; height:48px; flex-basis:48px; }}
+  :root {{ --fs-brand:1.9rem; --fs-brand-latin:.85rem; --fs-q:1.25rem; }}
+  .brand-sub {{ font-size:.9rem; }}
+  .statusbar {{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px 16px; }}
+  .statusbar .chip {{ grid-column:1 / -1; justify-self:start; }}
+  .statusbar .fact:nth-of-type(3) {{ grid-column:1 / -1; }}  /* analysis period gets the full width */
   .kpis {{ grid-template-columns:repeat(2, minmax(0,1fr)); }}
   .pipeline {{ grid-template-columns:repeat(2, minmax(0,1fr)); }}
-  .kpi .n {{ font-size:1.6rem; }} .q {{ font-size:1.2rem; }}
+  .kpi .n {{ font-size:1.6rem; }}
   .zone-card .z {{ font-size:1.15rem; }}
   /* phones: one horizontally scrollable row of tabs instead of three wrapped rows */
   .st-key-topnav [data-testid="stButtonGroup"] [role="radiogroup"] {{ flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none;
@@ -141,7 +162,7 @@ RTL_CSS = """
 [data-testid="stMain"] .stMarkdown, [data-testid="stMain"] .stCaption, [data-testid="stMain"] [data-testid="stExpander"] summary,
 [data-testid="stMain"] [data-testid="stCheckbox"], [data-testid="stMain"] [data-testid="stRadio"], [data-testid="stMain"] [data-testid="stWidgetLabel"],
 [data-testid="stMain"] [data-testid="stAlert"], [data-testid="stMain"] [data-testid="stForm"],
-.zone-card, .card, .note-card, .cause, .legend-big, .databadge, .brand, .statusbar, .kpis, .intro, .pipeline {
+.zone-card, .card, .note-card, .cause, .legend-big, .databadge, .brand, .statusbar, .kpis, .intro, .pipeline, .brand-text {
   direction: rtl; text-align: right; }
 .st-key-topnav [data-testid="stButtonGroup"], .st-key-header [data-testid="stHorizontalBlock"], .ind-table { direction: rtl; }
 </style>

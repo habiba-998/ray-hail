@@ -286,3 +286,12 @@ def test_no_old_brand_in_user_facing_text():
 def test_irrigation_word_is_not_rebranded():
     from src.ui.i18n import S
     assert "الري" in S["irr_rule"][1] and "ساترا" not in S["irr_rule"][1]
+
+
+def test_observation_age_uses_correct_arabic_number_agreement():
+    import streamlit as st
+
+    from src.ui.i18n import days_ago
+    st.session_state["lang"] = "ar"
+    assert [days_ago(n) for n in (0, 1, 2, 3, 10, 11)] == ["اليوم", "قبل يوم واحد", "قبل يومين", "قبل 3 أيام", "قبل 10 أيام", "قبل 11 يومًا"]
+    assert days_ago(None) == "—"

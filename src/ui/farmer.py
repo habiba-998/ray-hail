@@ -19,7 +19,7 @@ from ..config import CLASS_COLORS, TREND_MIN_OBS
 from . import details
 from .common import (ANOMALY_NOTE_FACTOR, Ctx, anomaly_watch, ee_ts, finite, fmt, priority_zones, render_farm_map, synced_control,
                      synced_select, zone_row)
-from .i18n import area_noun, count_areas, is_ar, ltr, t, tr
+from .i18n import area_noun, count_areas, days_ago, is_ar, ltr, t, tr
 
 ICON = {"HIGH": "‼", "MODERATE": "!", "HEALTHY": "✓", "NO_CROP": "–", "NO_DATA": "?"}
 EMOJI = {"HIGH": "🔴", "MODERATE": "🟡", "HEALTHY": "🟢", "NO_CROP": "⚪", "NO_DATA": "⚫"}
@@ -202,7 +202,7 @@ def page_map(c: Ctx) -> None:
     question(t("q_map"))
     if c.use_ee:
         fr = status.freshness(c.date)
-        fresh = t("map_fresh", date=c.date, n=fr.age_days) + (f" · ⚠️ {t('stale_note')}" if fr.stale else "")
+        fresh = t("map_fresh", date=c.date, ago=days_ago(fr.age_days)) + (f" · ⚠️ {t('stale_note')}" if fr.stale else "")
     else:
         fresh = "⚠️ " + t("map_fresh_demo", date=c.date)
     st.markdown(f"<div class='muted'>🛰️ {fresh}</div>", unsafe_allow_html=True)

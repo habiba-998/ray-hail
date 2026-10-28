@@ -55,7 +55,7 @@ from src.preprocessing import make_zone_grid
 from src.storage import make_store
 from src.ui import farmer, styles
 from src.ui.common import Ctx, ee_connect, ee_dates, ee_samples, ee_weather, ee_zone_stats, get_demo_farm, synced_control
-from src.ui.i18n import is_ar, ltr, t
+from src.ui.i18n import days_ago, is_ar, ltr, t
 
 log = logging.getLogger("satra")
 st.set_page_config(page_title=f"{brand.NAME_AR} | {brand.NAME_EN}", page_icon=brand.page_icon(), layout="wide", initial_sidebar_state="collapsed")
@@ -96,8 +96,7 @@ def friendly_stop(detail: object) -> None:
     """
     log.warning("SATRA data loading failed: %s", detail)
     msg = status.FAILURE_MESSAGES_AR[status.classify_failure(detail)]
-    status_slot.markdown(f"<div class='statusbar'><span class='chip unavailable'>⛔ {t('st_unavailable')}</span></div>",
-                         unsafe_allow_html=True)
+    status_slot.markdown(status_row("unavailable", f"⛔ {t('st_unavailable')}", []), unsafe_allow_html=True)
     st.markdown(f"<div class='databadge unavailable'>⚠️ {msg}</div>", unsafe_allow_html=True)
     if st.button(t("btn_retry"), key="b_retry"):
         ee_connect.clear()
@@ -131,18 +130,27 @@ start, end, max_cloud = (today - dt.timedelta(days=150), today, 30) if use_ee el
 # ---------------------------------------------------------------------------
 # Header: brand + farm picker; the data-status line is filled once the data are known
 # ---------------------------------------------------------------------------
+def status_row(chip_cls: str, chip_text: str, items: list[tuple[str, str]]) -> str:
+    """Second header row: data-status chip + labelled facts (label above value), so each fact reads on its own."""
+    facts = "".join(f"<div class='fact'><span class='lbl'>{lbl}</span><span class='val'>{val}</span></div>" for lbl, val in items)
+    return f"<div class='statusbar'><span class='chip {chip_cls}'>{chip_text}</span>{facts}</div>"
+
+
 with st.container(key="header"):
-    # brand first in the DOM so it stacks on top on phones; in Arabic, CSS flows the row right-to-left on wide screens
-    brand_col, farm_col = st.columns([3, 2], vertical_alignment="center")
-    latin = f"<span class='latin'>{brand.NAME_EN}</span>" if is_ar() else ""
+    # Row 1: brand identity (first in the DOM so it stacks on top on phones) + the farm picker as its own labelled group.
+    # In Arabic the row flows right-to-left (CSS), so the brand sits on the right and the picker on the left.
+    brand_col, farm_col = st.columns([5, 3], vertical_alignment="center", gap="medium")
+    secondary = f"<span class='brand-latin'>{brand.NAME_EN}</span>" if is_ar() else ""
     brand_col.markdown(
-        f"<div class='brand'><img src='{brand.data_uri(brand.SYMBOL_SVG)}' alt='{brand.NAME_EN}'>"
-        f"<div><h1>{t('app_name')}{latin}</h1><div class='sub'>{t('subtitle')}</div></div></div>",
+        f"<div class='brand'><img src='{brand.data_uri(brand.SYMBOL_SVG)}' alt='' width='84' height='84'>"
+        f"<div class='brand-text'><div class='brand-name' role='heading' aria-level='1'>{t('app_name')}{secondary}</div>"
+        f"<div class='brand-sub'>{t('subtitle')}</div></div></div>",
         unsafe_allow_html=True,
     )
     with farm_col:
         st.session_state.farm = preset
-        st.selectbox(t("farm"), list(FARMS), format_func=FARMS.get, key="farm", label_visibility="collapsed")
+        st.selectbox(t("farm"), list(FARMS), format_func=FARMS.get, key="farm")
+    # Row 2: data status (filled once the data are known)
     status_slot = st.empty()
 
 # ---------------------------------------------------------------------------
@@ -232,16 +240,15 @@ ctx = Ctx(
 # ---------------------------------------------------------------------------
 if use_ee:
     fr = status.freshness(date)
-    status_slot.markdown(
-        f"<div class='statusbar'><span class='chip real'>🛰️ {t('st_real')}</span>"
-        f"<span>{t('latest_obs', date=date, n=fr.age_days)}</span>"
-        f"<span>{t('period', a=ltr(start), b=ltr(end))}</span></div>", unsafe_allow_html=True)
+    status_slot.markdown(status_row("real", f"🛰️ {t('st_real')}", [
+        (t("hdr_latest"), ltr(date)),
+        (t("hdr_age"), days_ago(fr.age_days)),
+        (t("hdr_period"), t("hdr_period_val", a=ltr(start), b=ltr(end))),
+    ]), unsafe_allow_html=True)
     if fr.stale:
         st.markdown(f"<div class='databadge demo'>⚠️ {t('stale_note')}</div>", unsafe_allow_html=True)
 else:
-    status_slot.markdown(
-        f"<div class='statusbar'><span class='chip demo'>⚠️ {t('st_demo')}</span>"
-        f"<span>{t('latest_obs_demo', date=date)}</span></div>", unsafe_allow_html=True)
+    status_slot.markdown(status_row("demo", f"⚠️ {t('st_demo')}", [(t("hdr_sim_date"), ltr(date))]), unsafe_allow_html=True)
     st.markdown(f"<div class='databadge demo'>{t('demo_banner')}</div>", unsafe_allow_html=True)
 with st.container(key="topnav"):
     synced_control("nav", farmer.PAGES, "fpage", farmer.nav_labels().get)

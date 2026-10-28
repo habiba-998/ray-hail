@@ -240,6 +240,11 @@ S: dict[str, tuple[str, str]] = {
     "demo_banner": ("DEMO MODE: no satellite connection is configured, so everything shown is simulated and does not describe a real farm.",
                     "وضع تجريبي: لم يُضبط الاتصال بالأقمار الصناعية، لذلك كل ما يظهر محاكاة ولا يصف مزرعة حقيقية."),
     "latest_obs": ("Latest valid observation: {date} ({n} days ago)", "آخر ملاحظة صالحة: {date} (قبل {n} يومًا)"),
+    "hdr_latest": ("Latest valid observation", "آخر ملاحظة صالحة"),
+    "hdr_age": ("Observation age", "عمر الملاحظة"),
+    "hdr_period": ("Analysis period", "فترة التحليل"),
+    "hdr_period_val": ("{a} to {b}", "من {a} إلى {b}"),
+    "hdr_sim_date": ("Simulated observation date", "تاريخ الملاحظة المحاكاة"),
     "latest_obs_demo": ("Simulated observation date: {date}", "تاريخ الملاحظة المحاكاة: {date}"),
     "stale_note": ("This image is old; recent changes on the farm are not visible in it.", "هذه الصورة قديمة نسبيًا، ولا تظهر فيها التغيرات الأخيرة في المزرعة."),
     "period": ("Analysis period: {a} to {b}", "فترة التحليل: من {a} إلى {b}"),
@@ -309,7 +314,7 @@ S: dict[str, tuple[str, str]] = {
                        "**التغير منذ صورة سابقة**: يُظهر التراجع الحديث، والحصاد أو الحش يسببان تراجعًا أيضًا."),
     "missing_ind": ("Not available for this area: {names}. These indicators are left out of the assessment; nothing is estimated in their place.",
                     "غير متاح لهذه المنطقة: {names}. تُستبعد هذه المؤشرات من التقييم ولا يُقدَّر شيء مكانها."),
-    "map_fresh": ("Satellite image of {date} ({n} days ago)", "صورة القمر الصناعي بتاريخ {date} (قبل {n} يومًا)"),
+    "map_fresh": ("Satellite image of {date} ({ago})", "صورة القمر الصناعي بتاريخ {date} ({ago})"),
     "map_fresh_demo": ("Simulated image ({date}) – not a real observation", "صورة محاكاة ({date}) – ليست رصدًا حقيقيًا"),
     "log_required": ("Fields marked * are required.", "الحقول المعلَّمة بـ * مطلوبة."),
     "log_saved_detail": ("Saved: inspection of area {z} on {d}.", "تم الحفظ: فحص المنطقة {z} بتاريخ {d}."),
@@ -400,6 +405,21 @@ def count_areas(n: int, kind: str) -> str:
     if 3 <= n <= 10:
         return f"{n} مناطق {verb[0]}"
     return f"{n} منطقة {verb[0]}"
+
+
+def days_ago(n: int | None) -> str:
+    """'N days ago' with Arabic number agreement (اليوم / قبل يوم واحد / قبل يومين / قبل ٣ أيام / قبل ١٥ يومًا)."""
+    if n is None:
+        return "—"
+    if not is_ar():
+        return "today" if n == 0 else "1 day ago" if n == 1 else f"{n} days ago"
+    if n <= 0:
+        return "اليوم"
+    if n == 1:
+        return "قبل يوم واحد"
+    if n == 2:
+        return "قبل يومين"
+    return f"قبل {n} أيام" if n <= 10 else f"قبل {n} يومًا"
 
 
 def area_noun(n: int) -> str:
