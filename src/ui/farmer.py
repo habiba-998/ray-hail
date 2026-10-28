@@ -19,7 +19,7 @@ from ..config import CLASS_COLORS, TREND_MIN_OBS
 from . import details
 from .common import (ANOMALY_NOTE_FACTOR, Ctx, anomaly_watch, ee_ts, finite, fmt, priority_zones, render_farm_map, synced_control,
                      synced_select, zone_row)
-from .i18n import area_noun, count_areas, is_ar, ltr, t, tr
+from .i18n import area_noun, count_areas, days_ago, is_ar, ltr, t, tr
 
 ICON = {"HIGH": "‼", "MODERATE": "!", "HEALTHY": "✓", "NO_CROP": "–", "NO_DATA": "?"}
 EMOJI = {"HIGH": "🔴", "MODERATE": "🟡", "HEALTHY": "🟢", "NO_CROP": "⚪", "NO_DATA": "⚫"}
@@ -202,7 +202,7 @@ def page_map(c: Ctx) -> None:
     question(t("q_map"))
     if c.use_ee:
         fr = status.freshness(c.date)
-        fresh = t("map_fresh", date=c.date, n=fr.age_days) + (f" · ⚠️ {t('stale_note')}" if fr.stale else "")
+        fresh = t("map_fresh", date=c.date, ago=days_ago(fr.age_days)) + (f" · ⚠️ {t('stale_note')}" if fr.stale else "")
     else:
         fresh = "⚠️ " + t("map_fresh_demo", date=c.date)
     st.markdown(f"<div class='muted'>🛰️ {fresh}</div>", unsafe_allow_html=True)
@@ -322,8 +322,9 @@ def page_log(c: Ctx) -> None:
             cond = st.radio(t("log_condition"), list(storage.CONDITIONS), format_func=lambda v: t(f"cond_{v}"), index=2, key="log_cond")
             irr = st.radio(t("log_irrigation"), list(storage.IRRIGATION_ISSUE), format_func=lambda v: t(f"irr_{v}"), index=2,
                            horizontal=True, key="log_irr")
-            alt = st.multiselect(t("log_alt"), list(storage.ALT_CAUSES), format_func=lambda v: t(f"alt_{v}"), key="log_alt")
-            moist = st.number_input(t("log_moisture"), min_value=0.0, max_value=100.0, value=0.0, step=1.0, key="log_moist")
+            alt = st.multiselect(t("log_alt"), list(storage.ALT_CAUSES), format_func=lambda v: t(f"alt_{v}"), key="log_alt",
+                                 placeholder=t("log_alt_placeholder"))
+            moist = st.number_input(t("log_moisture"), min_value=0.0, max_value=100.0, value=0.0, step=1.0, format="%.1f", key="log_moist")
             by = st.text_input(t("log_inspector"), max_chars=60, key="log_by")
             notes = st.text_area(t("notes"), max_chars=500, key="log_notes")
             submitted = st.form_submit_button(t("btn_log_save"), type="primary")

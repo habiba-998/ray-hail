@@ -4,6 +4,7 @@ Run from the project root:  python -m pytest tests/test_satra.py -q
 Synthetic arrays/tables below are TEST FIXTURES only; they are never shown to users as data.
 """
 import datetime as dt
+import re
 
 import numpy as np
 import pandas as pd
@@ -286,3 +287,30 @@ def test_no_old_brand_in_user_facing_text():
 def test_irrigation_word_is_not_rebranded():
     from src.ui.i18n import S
     assert "الري" in S["irr_rule"][1] and "ساترا" not in S["irr_rule"][1]
+
+
+def test_observation_age_uses_correct_arabic_number_agreement():
+    import streamlit as st
+
+    from src.ui.i18n import days_ago
+    st.session_state["lang"] = "ar"
+    assert [days_ago(n) for n in (0, 1, 2, 3, 10, 11)] == ["اليوم", "قبل يوم واحد", "قبل يومين", "قبل 3 أيام", "قبل 10 أيام", "قبل 11 يومًا"]
+    assert days_ago(None) == "—"
+
+
+def test_interface_uses_one_digit_system():
+    """Dates and values are Western digits; Arabic-Indic digits inside sentences would mix two systems on screen."""
+    import re
+
+    from src.ui.common import LIMITATIONS
+    from src.ui.i18n import S
+    texts = [x for pair in S.values() for x in pair] + [x for pair in LIMITATIONS for x in pair]
+    assert [x for x in texts if re.search("[٠-٩]", x)] == []
+
+
+def test_header_labels_and_placeholders_are_arabic():
+    from src.ui.i18n import S
+    for key in ("hdr_latest", "hdr_age", "hdr_period", "hdr_period_val", "hdr_sim_date", "log_alt_placeholder"):
+        assert key in S and S[key][1] and not re.search("[A-Za-z]", S[key][1].replace("{a}", "").replace("{b}", ""))
+    assert S["log_title"][1] == "سجل الفحص الميداني" and S["irr_title"][1] == "الري"
+
