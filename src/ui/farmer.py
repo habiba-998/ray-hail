@@ -1,4 +1,4 @@
-"""Farmer interface – the only interface of RAY (Arabic, plain language, no technical terms).
+"""Farmer interface – the only interface of SATRA (Arabic, plain language, no technical terms).
 
 Journey: Home (what needs attention?) → Map (where?) → Zones (evidence, alternatives, what to check) → Irrigation
 (decide after verifying) → Field inspection log (optional, non-photographic) → Technical details → About.
@@ -14,7 +14,7 @@ import logging
 import pandas as pd
 import streamlit as st
 
-from .. import analysis, fusion, knowledge, ml, storage, validation
+from .. import analysis, brand, fusion, knowledge, ml, status, storage, validation
 from ..config import CLASS_COLORS, TREND_MIN_OBS
 from . import details
 from .common import (ANOMALY_NOTE_FACTOR, Ctx, anomaly_watch, ee_ts, finite, fmt, priority_zones, render_farm_map, synced_control,
@@ -25,7 +25,7 @@ ICON = {"HIGH": "‼", "MODERATE": "!", "HEALTHY": "✓", "NO_CROP": "–", "NO_
 EMOJI = {"HIGH": "🔴", "MODERATE": "🟡", "HEALTHY": "🟢", "NO_CROP": "⚪", "NO_DATA": "⚫"}
 TEXT_COLOR = {"HIGH": "#A12F2B", "MODERATE": "#7A5600", "HEALTHY": "#1E5B38", "NO_CROP": "#5E6E66", "NO_DATA": "#5E6E66"}
 PAGES = ["home", "map", "zones", "water", "log", "tech", "about"]
-log = logging.getLogger("ray")
+log = logging.getLogger("satra")
 
 
 # ---------------------------------------------------------------------------
@@ -150,7 +150,13 @@ def choose_zone(c: Ctx, label: str | None = None) -> dict:
 # ---------------------------------------------------------------------------
 # pages
 # ---------------------------------------------------------------------------
+def _meanings() -> None:
+    with st.expander(t("mean_title")):
+        st.markdown("\n".join(f"- {ICON[k]} {t('mean_' + k)}" for k in ("HIGH", "MODERATE", "HEALTHY", "NO_DATA", "NO_CROP")))
+
+
 def page_home(c: Ctx) -> None:
+    st.markdown(f"<div class='intro'>{t('home_intro')}</div>", unsafe_allow_html=True)
     question(t("q_home"))
     counts = c.scored.cls.value_counts()
     n = {k: int(counts.get(k, 0)) for k in ("HIGH", "MODERATE", "HEALTHY", "NO_DATA", "NO_CROP")}
@@ -161,9 +167,11 @@ def page_home(c: Ctx) -> None:
         f"<div class='section-title'>{t('today_status')}</div><div class='kpis'>"
         + "".join(f"<div class='kpi {k}'><div class='n'>{v}</div><div class='l'>{lbl}</div></div>" for k, v, lbl in tiles)
         + "</div>"
+        + f"<div class='muted'>{t('assessable', n=len(c.scored) - n['NO_DATA'], total=len(c.scored))}</div>"
         + (f"<div class='muted'>⚪ {t('n_nocrop', z='، '.join(nocrop))}</div>" if nocrop else ""),
         unsafe_allow_html=True,
     )
+    _meanings()
     prio = priority_zones(c)
     st.write("")
     if len(prio):
@@ -192,6 +200,12 @@ def page_home(c: Ctx) -> None:
 
 def page_map(c: Ctx) -> None:
     question(t("q_map"))
+    if c.use_ee:
+        fr = status.freshness(c.date)
+        fresh = t("map_fresh", date=c.date, n=fr.age_days) + (f" · ⚠️ {t('stale_note')}" if fr.stale else "")
+    else:
+        fresh = "⚠️ " + t("map_fresh_demo", date=c.date)
+    st.markdown(f"<div class='muted'>🛰️ {fresh}</div>", unsafe_allow_html=True)
     st.session_state.setdefault("fmap_view", "status")
     view = synced_control("map view", ["status", "image"], "fmap_view", lambda v: t(f"view_{v}"))
     st.markdown("<div class='legend-big'>" + "".join(
@@ -209,7 +223,8 @@ def page_map(c: Ctx) -> None:
         z = choose_zone(c)
         zone_card(z)
         st.button(t("view_details"), on_click=go, args=("zones",), type="primary", width="stretch", key="b_details")
-    st.caption("ⓘ " + t("grid_note"))
+    st.markdown(f"<div class='note-card'>▦ {t('grid_note')}</div>", unsafe_allow_html=True)
+    _meanings()
     st.caption("ⓘ " + t("sky_ground"))
 
 
@@ -261,8 +276,13 @@ def page_zones(c: Ctx) -> None:
     else:
         section(t("z_why_flag"))
         st.markdown("\n".join(f"- {w}" for w in _why_lines(z)))
-        section(t("z_values"))
+        section(t("z_observed"))
         _indicator_table(c, z)
+        missing = [t(IND_KEY[k]) for k, v in z["rules"].items() if v[0] is None]
+        if missing:
+            st.markdown(f"<div class='note-card'>⚫ {t('missing_ind', names='، '.join(missing))}</div>", unsafe_allow_html=True)
+        with st.expander(t("ind_help_title")):
+            st.markdown("\n".join(f"- {t('ind_help_' + k)}" for k in ("ndvi", "ndmi", "ndre", "lst", "dndvi")))
         section(t("z_quality"))
         _quality_line(z)
         section(t("z_reference"))
@@ -272,7 +292,8 @@ def page_zones(c: Ctx) -> None:
         cause_rows(zone_causes(c, z), limit=3)
         st.markdown(f"<div class='note-card'>ⓘ {t('prelim')}</div>", unsafe_allow_html=True)
         weather_line(c)
-        section(t("q_check"))
+        section(t("z_checks"))
+        st.markdown(f"<div class='muted'>{t('q_check')}</div>", unsafe_allow_html=True)
         checklist([t(f"check_{i}") for i in range(1, 6)])
         st.warning(t("irr_rule"))
 
@@ -293,6 +314,7 @@ def page_log(c: Ctx) -> None:
     ids = prio + [z for z in c.scored.zone_id if z not in prio]
     cur = st.session_state.get("zone_sel")
     with st.expander(t("log_add"), expanded=True):
+        st.caption(t("log_required") + " · " + t("log_storage_hint", note=c.store.persistent_note_ar if is_ar() else c.store.persistent_note_en))
         with st.form("inspection_form", clear_on_submit=True):
             zid = st.selectbox(t("zone"), ids, index=ids.index(cur) if cur in ids else 0, key="log_zone",
                                format_func=lambda x: zone_label(x, zone_row(c, x)["cls"]))
@@ -315,13 +337,16 @@ def page_log(c: Ctx) -> None:
                 "inspection_date": day.isoformat(), "condition": cond, "irrigation_issue": irr, "alt_causes": alt or None,
                 "soil_moisture_pct": float(moist) if moist > 0 else None, "inspector": by.strip() or None, "notes": notes.strip() or None,
             }
-            try:
-                c.store.save_observation(rec)
-                st.success(t("log_saved"))
-                st.caption(c.store.persistent_note_ar if is_ar() else c.store.persistent_note_en)
-            except Exception as exc:  # noqa: BLE001
-                log.warning("inspection not saved: %s", exc)
-                st.error(t("save_failed"))
+            errs = storage.validate_record(rec)
+            if errs:
+                st.warning(t("log_err_title") + " " + "، ".join(t("log_err_" + e) for e in errs))
+            else:
+                try:
+                    c.store.save_observation(rec)
+                    st.success(t("log_saved") + " " + t("log_saved_detail", z=zid, d=ltr(rec["inspection_date"])), icon="✅")
+                except Exception as exc:  # noqa: BLE001
+                    log.warning("inspection not saved: %s", exc)
+                    st.error(t("save_failed"))
 
     st.caption(t("log_session_note"))
     try:
@@ -550,6 +575,8 @@ def page_water(c: Ctx) -> None:
 
 def page_about(c: Ctx) -> None:
     question(t("about_title"))
+    logo = brand.LOGO_AR_SVG if is_ar() else brand.LOGO_EN_SVG
+    st.markdown(f"<div class='about-logo'><img src='{brand.data_uri(logo)}' alt='{brand.NAME_EN}'></div>", unsafe_allow_html=True)
     st.markdown(f"<div class='card'>{t('about_text')}<br><br><b>{t('about_not')}</b></div>", unsafe_allow_html=True)
     section(t("how_title"))
     st.markdown("<div class='card soft'>" + "<br>".join(t(f"how_{i}") for i in range(1, 7)) + "</div>", unsafe_allow_html=True)

@@ -56,8 +56,8 @@ class NCMConnector:
     def status(self) -> ConnectorStatus:
         return ConnectorStatus(
             self.id, self.name, self.name_ar, False,
-            "Not connected: NCM data access requires a licence for a legal entity; no public API is available to RAY.",
-            "غير متصل: الوصول إلى بيانات المركز يتطلب ترخيصًا لجهة اعتبارية، ولا توجد واجهة برمجية عامة متاحة لـ RAY.",
+            "Not connected: NCM data access requires a licence for a legal entity; no public API is available to this application.",
+            "غير متصل: الوصول إلى بيانات المركز يتطلب ترخيصًا لجهة اعتبارية، ولا توجد واجهة برمجية عامة متاحة لهذا التطبيق.",
         )
 
     def fetch(self, lat: float, lon: float, start: str, end: str) -> pd.DataFrame | None:

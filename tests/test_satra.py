@@ -1,6 +1,6 @@
 """Pytest unit tests for the scientific core (no Streamlit, no Earth Engine, no network).
 
-Run from the project root:  python -m pytest tests/test_rayy.py -q
+Run from the project root:  python -m pytest tests/test_satra.py -q
 Synthetic arrays/tables below are TEST FIXTURES only; they are never shown to users as data.
 """
 import datetime as dt
@@ -255,3 +255,34 @@ def test_ndvi_ratio_label_says_it_is_a_ratio_in_both_languages():
     from src.ui.i18n import S
     en, ar = S["ind_ndvi"]
     assert "ratio" in en and "نسبة" in ar
+
+
+# ------------------------------------------------------------------ SATRA identity
+OLD_BRAND = ("RAYY", "Rayy", "رَيّ", "رَي ")
+
+
+def test_brand_assets_exist_and_are_valid_svg():
+    import xml.dom.minidom
+
+    from src import brand
+    for p in (brand.SYMBOL_SVG, brand.SYMBOL_MONO_DARK_SVG, brand.SYMBOL_MONO_LIGHT_SVG, brand.LOGO_EN_SVG, brand.LOGO_AR_SVG):
+        assert p.exists(), p
+        xml.dom.minidom.parse(str(p))
+    assert brand.FAVICON_PNG.exists() and brand.page_icon().endswith("favicon.png")
+    assert brand.data_uri(brand.SYMBOL_SVG).startswith("data:image/svg+xml;base64,")
+
+
+def test_no_old_brand_in_user_facing_text():
+    import re
+
+    from src.ui.common import LIMITATIONS
+    from src.ui.i18n import S
+    texts = [x for pair in S.values() for x in pair] + [x for pair in LIMITATIONS for x in pair]
+    offenders = [x for x in texts if any(o in x for o in OLD_BRAND) or re.search(r"\bRAY\b", x)]
+    assert offenders == []
+    assert S["app_name"] == ("SATRA", "ساترا")
+
+
+def test_irrigation_word_is_not_rebranded():
+    from src.ui.i18n import S
+    assert "الري" in S["irr_rule"][1] and "ساترا" not in S["irr_rule"][1]

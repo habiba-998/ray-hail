@@ -357,7 +357,7 @@ def s1_zone_stats(bounds: Bounds, zones_records: list[dict], date: str, window_d
 
     Uses IW-mode GRD scenes with both VV and VH. Averaging is done in linear power and converted back to dB.
     Backscatter responds to surface/soil moisture and canopy structure; it is cloud-independent but not
-    calibrated for crop stress here, so RAY shows it as context only.
+    calibrated for crop stress here, so SATRA shows it as context only.
     """
     ee = _ee()
     region = _rect(bounds)

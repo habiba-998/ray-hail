@@ -1,4 +1,4 @@
-"""RAY | رَيّ – decision support for farmers (Streamlit). Run with:  streamlit run app.py
+"""SATRA | ساترا – agricultural earth-observation decision support (Streamlit). Run with:  streamlit run app.py
 
 Farmer-only interface. Structure:
   * settings     – fixed defaults in the background (no technical controls are shown to the farmer)
@@ -13,7 +13,6 @@ credentials are configured) or UNAVAILABLE (retrieval failed / insufficient data
 """
 from __future__ import annotations
 
-import base64
 import datetime as dt
 import json
 import logging
@@ -41,15 +40,15 @@ def _refresh_stale_project_modules() -> None:
     for f in sorted([root / "app.py", *(root / "src").rglob("*.py")]):
         h.update(f.read_bytes())
     digest = h.hexdigest()
-    if getattr(sys, "_ray_source_digest", None) != digest:
+    if getattr(sys, "_satra_source_digest", None) != digest:
         for name in [m for m in sys.modules if m == "src" or m.startswith("src.")]:
             del sys.modules[name]
-        sys._ray_source_digest = digest
+        sys._satra_source_digest = digest
 
 
 _refresh_stale_project_modules()
 
-from src import analysis, ml, status  # noqa: E402  (imported after the stale-module refresh above)
+from src import analysis, brand, ml, status  # noqa: E402  (imported after the stale-module refresh above)
 from src import weather as wxmod
 from src.config import AOI, AOI_PRESETS, DEFAULT_PRESET, Thresholds
 from src.preprocessing import make_zone_grid
@@ -58,15 +57,8 @@ from src.ui import farmer, styles
 from src.ui.common import Ctx, ee_connect, ee_dates, ee_samples, ee_weather, ee_zone_stats, get_demo_farm, synced_control
 from src.ui.i18n import is_ar, ltr, t
 
-log = logging.getLogger("ray")
-st.set_page_config(page_title="رَيّ | RAY", page_icon="💧", layout="wide", initial_sidebar_state="collapsed")
-ICON_B64 = base64.b64encode(
-    b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="24 12 72 84"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">'
-    b'<stop offset="0" stop-color="#1E5B38"/><stop offset="1" stop-color="#65A30D"/></linearGradient></defs>'
-    b'<path d="M60 18 C60 18 30 55 30 75 A30 30 0 0 0 90 75 C90 55 60 18 60 18 Z" fill="url(#g)"/>'
-    b'<path d="M48 86 C50 70 62 62 76 60 C72 74 62 84 48 86 Z" fill="#fff" opacity=".92"/>'
-    b'<path d="M50 84 L70 64" stroke="#65A30D" stroke-width="2"/></svg>'
-).decode()
+log = logging.getLogger("satra")
+st.set_page_config(page_title=f"{brand.NAME_AR} | {brand.NAME_EN}", page_icon=brand.page_icon(), layout="wide", initial_sidebar_state="collapsed")
 DEMO_SRC, EE_SRC = "demo", "earth_engine"
 # Farmer-facing farm names (coordinates are never shown)
 FARMS = {k: f"مزرعة حائل {i + 1}" for i, k in enumerate(k for k in AOI_PRESETS if not k.startswith("Custom"))}
@@ -102,7 +94,7 @@ def friendly_stop(detail: object) -> None:
 
     The app never substitutes demo data here.
     """
-    log.warning("RAY data loading failed: %s", detail)
+    log.warning("SATRA data loading failed: %s", detail)
     msg = status.FAILURE_MESSAGES_AR[status.classify_failure(detail)]
     status_slot.markdown(f"<div class='statusbar'><span class='chip unavailable'>⛔ {t('st_unavailable')}</span></div>",
                          unsafe_allow_html=True)
@@ -142,9 +134,10 @@ start, end, max_cloud = (today - dt.timedelta(days=150), today, 30) if use_ee el
 with st.container(key="header"):
     # brand first in the DOM so it stacks on top on phones; in Arabic, CSS flows the row right-to-left on wide screens
     brand_col, farm_col = st.columns([3, 2], vertical_alignment="center")
+    latin = f"<span class='latin'>{brand.NAME_EN}</span>" if is_ar() else ""
     brand_col.markdown(
-        f"<div class='brand'><img src='data:image/svg+xml;base64,{ICON_B64}' alt=''>"
-        f"<div><h1>{t('app_name')}</h1><div class='sub'>{t('subtitle')}</div></div></div>",
+        f"<div class='brand'><img src='{brand.data_uri(brand.SYMBOL_SVG)}' alt='{brand.NAME_EN}'>"
+        f"<div><h1>{t('app_name')}{latin}</h1><div class='sub'>{t('subtitle')}</div></div></div>",
         unsafe_allow_html=True,
     )
     with farm_col:
@@ -255,7 +248,8 @@ with st.container(key="topnav"):
 farmer.render(ctx)
 
 st.markdown(
-    "<div class='footer'>رَيّ — نظام لدعم القرار، ونتائجه مؤشرات أولية وليست تشخيصًا نهائيًا."
+    f"<div class='footer'><b>{brand.NAME_AR} · {brand.NAME_EN}</b> — {brand.TAGLINE_AR}<br>"
+    "منصة لدعم القرار، ونتائجها مؤشرات أولية للفحص وليست تشخيصًا نهائيًا."
     + ("<br>الصور الفضائية: © برنامج كوبرنيكوس الأوروبي" if use_ee else "") + "</div>",
     unsafe_allow_html=True,
 )

@@ -9,10 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-APP_NAME = "RAY"
-APP_NAME_AR = "رَيّ"
-TAGLINE = "Smarter Irrigation from Space"
-TAGLINE_AR = "ري أذكى من الفضاء"
+# Product name, taglines and colours of the identity live in src/brand.py.
 
 # ---------------------------------------------------------------------------
 # Areas of interest (Hail region, Saudi Arabia)
@@ -100,11 +97,11 @@ class Thresholds:
 # Visual identity
 # ---------------------------------------------------------------------------
 CLASS_COLORS = {
-    "HEALTHY": "#2E9E5B",
-    "MODERATE": "#F2B01E",
-    "HIGH": "#D64541",
-    "NO_CROP": "#9AA3A8",
-    "NO_DATA": "#5B6770",
+    "HEALTHY": "#2F8A5B",   # no clear abnormal signal (not a claim that the zone is healthy)
+    "MODERATE": "#D99A2B",  # follow-up recommended
+    "HIGH": "#C94C4C",      # higher inspection priority (not a diagnosis)
+    "NO_CROP": "#A9B2B6",
+    "NO_DATA": "#7A858C",   # insufficient / unavailable data
 }
 CLASS_LABELS = {
     "HEALTHY": "Healthy / Low stress",
@@ -122,9 +119,3 @@ CLASS_LABELS_AR = {
 }
 CLASS_EMOJI = {"HEALTHY": "🟢", "MODERATE": "🟡", "HIGH": "🔴", "NO_CROP": "⚪", "NO_DATA": "⚫"}
 
-BRAND = {
-    "primary": "#0F766E",
-    "accent": "#65A30D",
-    "sand": "#F5EFE0",
-    "ink": "#0B2530",
-}

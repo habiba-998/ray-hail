@@ -1,4 +1,5 @@
-"""CSS. Identity: calm agricultural green on white. Red / amber are used ONLY for status, always with text + icon.
+"""CSS for the SATRA identity (tokens in src/brand.py): deep green, satellite navy and teal on warm off-white.
+Red / amber / grey are used ONLY for status, always with text + icon.
 
 Selectors target Streamlit's stable data-testid attributes, keyed containers (.st-key-*) and our own classes only.
 """
@@ -6,15 +7,20 @@ from __future__ import annotations
 
 import streamlit as st
 
-GREEN = "#2F7D4E"        # primary
-GREEN_DARK = "#1E5B38"   # headings, important elements
-GREEN_LIGHT = "#EEF6F0"  # soft backgrounds
-LINE = "#DDE5DF"         # borders
-INK = "#1F2D27"          # text
-MUTED = "#5E6E66"        # secondary text
-STATUS = {"HIGH": ("#D64541", "#FDECEB", "#A12F2B"), "MODERATE": ("#E3A008", "#FFF6DD", "#7A5600"),
-          "HEALTHY": ("#2E9E5B", "#EAF6EF", "#1E5B38"), "NO_DATA": ("#5B6770", "#F1F3F4", "#3F4A52"),
-          "NO_CROP": ("#9AA3A8", "#F4F5F6", "#5E6E66")}
+from ..brand import PALETTE
+
+P = PALETTE
+GREEN = P["green"]       # primary actions
+GREEN_DARK = P["navy"]   # headings, wordmark
+TEAL = P["teal"]         # accents, observation
+GREEN_LIGHT = "#EAF2EE"  # soft backgrounds
+LINE = P["line"]         # borders
+INK = P["ink"]           # text
+MUTED = P["muted"]       # secondary text
+# status: (accent, background, text) – always shown together with a label and an icon
+STATUS = {"HIGH": (P["red"], "#FBEDEC", "#9B3434"), "MODERATE": (P["amber"], "#FCF3E2", "#7A5410"),
+          "HEALTHY": (P["ok"], "#E9F4EE", "#1F5E3E"), "NO_DATA": (P["gray"], "#F0F2F3", "#4A555B"),
+          "NO_CROP": ("#A9B2B6", "#F4F5F6", P["muted"])}
 
 _status_css = "\n".join(
     f".kpi.{k} {{ border-top-color:{c}; }} .kpi.{k} .n {{ color:{tx}; }}\n"
@@ -24,17 +30,19 @@ _status_css = "\n".join(
 
 BASE_CSS = f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Sans:wght@500;700&display=swap');
 html, body, [class*="css"], button, input, textarea, select {{
   font-family: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, sans-serif; color:{INK}; }}
 [data-testid="stMainBlockContainer"].block-container {{ padding-top: 3.2rem !important; max-width: 1120px; }}
-[data-testid="stAppViewContainer"], [data-testid="stMain"] {{ background:#FAFBFA; }}
+[data-testid="stAppViewContainer"], [data-testid="stMain"] {{ background:{P["paper"]}; }}
 
 /* ---------- header ---------- */
-.st-key-header {{ background:#fff; border:1px solid {LINE}; border-radius:14px; padding:10px 16px 18px 16px; }}
+.st-key-header {{ background:#fff; border:1px solid {LINE}; border-top:3px solid {TEAL}; border-radius:14px; padding:10px 16px 18px 16px; }}
 .brand {{ display:flex; align-items:center; gap:12px; }}
-.brand img {{ height:42px; }}
-.brand h1 {{ margin:0; padding:0; font-size:1.6rem; font-weight:700; color:{GREEN_DARK}; line-height:1.1; }}
+.brand img {{ height:58px; }}
+.brand h1 {{ margin:0; padding:0; font-size:1.95rem; font-weight:700; color:{GREEN_DARK}; line-height:1.1; }}
+.brand .latin {{ font-family:'IBM Plex Sans', 'Segoe UI', sans-serif; font-size:.78rem; font-weight:700; letter-spacing:.32em;
+  color:{TEAL}; margin-inline-start:10px; vertical-align:middle; }}
 .brand .sub {{ color:{MUTED}; font-size:.92rem; margin-top:2px; }}
 .statusbar {{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; margin:10px 0 2px 0; font-size:.92rem; color:{MUTED}; }}
 .chip {{ display:inline-flex; align-items:center; gap:6px; border-radius:999px; padding:3px 12px; font-weight:600; font-size:.88rem; }}
@@ -59,7 +67,7 @@ div.stButton > button[kind="primary"]:hover, div.stFormSubmitButton > button[kin
 /* ---------- page typography ---------- */
 .q {{ font-size:1.45rem; font-weight:700; color:{INK}; margin:14px 0 10px 0; }}
 .section-title {{ font-size:1.05rem; font-weight:700; color:{GREEN_DARK}; margin:22px 0 8px 0; padding-inline-start:10px;
-  border-inline-start:4px solid {GREEN}; line-height:1.3; }}
+  border-inline-start:4px solid {TEAL}; line-height:1.3; }}
 .muted {{ color:{MUTED}; font-size:.94rem; }}
 
 /* ---------- cards ---------- */
@@ -95,6 +103,15 @@ div.stButton > button[kind="primary"]:hover, div.stFormSubmitButton > button[kin
 .ind-table tr:last-child td {{ border-bottom:0; }}
 .flag {{ border-radius:999px; padding:1px 10px; font-weight:600; font-size:.85rem; white-space:nowrap; }}
 .flag.yes {{ background:#FDECEB; color:#A12F2B; }} .flag.no {{ background:#EAF6EF; color:#1E5B38; }} .flag.na {{ background:#F1F3F4; color:{MUTED}; }}
+.intro {{ font-size:1.02rem; color:{INK}; background:#fff; border:1px solid {LINE}; border-inline-start:4px solid {TEAL};
+  border-radius:12px; padding:10px 14px; margin:12px 0 2px 0; }}
+.about-logo img {{ width:min(360px, 90%); display:block; margin:6px 0 12px 0; }}
+.pipeline {{ display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:8px; margin:4px 0 10px 0; }}
+.pipeline .step {{ background:#fff; border:1px solid {LINE}; border-top:4px solid {TEAL}; border-radius:12px; padding:10px; }}
+.pipeline .step b {{ display:block; color:{GREEN_DARK}; font-size:1rem; }}
+.pipeline .step small {{ display:block; color:{MUTED}; font-size:.85rem; line-height:1.4; margin-top:4px; }}
+.pipeline .num {{ display:inline-block; width:22px; height:22px; border-radius:50%; background:{GREEN}; color:#fff; text-align:center;
+  font-size:.8rem; line-height:22px; margin-bottom:4px; }}
 .checklist {{ padding-inline-start:4px; list-style:none; }}
 .checklist li {{ font-size:1.02rem; margin-bottom:6px; }}
 .status-line {{ font-size:1.1rem; font-weight:600; margin:6px 0; }}
@@ -105,6 +122,7 @@ div.stButton > button[kind="primary"]:hover, div.stFormSubmitButton > button[kin
   [data-testid="stMainBlockContainer"].block-container {{ padding-left:16px !important; padding-right:16px !important; }}
   .brand h1 {{ font-size:1.35rem; }} .brand img {{ height:34px; }}
   .kpis {{ grid-template-columns:repeat(2, minmax(0,1fr)); }}
+  .pipeline {{ grid-template-columns:repeat(2, minmax(0,1fr)); }}
   .kpi .n {{ font-size:1.6rem; }} .q {{ font-size:1.2rem; }}
   .zone-card .z {{ font-size:1.15rem; }}
   /* phones: one horizontally scrollable row of tabs instead of three wrapped rows */
@@ -123,7 +141,7 @@ RTL_CSS = """
 [data-testid="stMain"] .stMarkdown, [data-testid="stMain"] .stCaption, [data-testid="stMain"] [data-testid="stExpander"] summary,
 [data-testid="stMain"] [data-testid="stCheckbox"], [data-testid="stMain"] [data-testid="stRadio"], [data-testid="stMain"] [data-testid="stWidgetLabel"],
 [data-testid="stMain"] [data-testid="stAlert"], [data-testid="stMain"] [data-testid="stForm"],
-.zone-card, .card, .note-card, .cause, .legend-big, .databadge, .brand, .statusbar, .kpis {
+.zone-card, .card, .note-card, .cause, .legend-big, .databadge, .brand, .statusbar, .kpis, .intro, .pipeline {
   direction: rtl; text-align: right; }
 .st-key-topnav [data-testid="stButtonGroup"], .st-key-header [data-testid="stHorizontalBlock"], .ind-table { direction: rtl; }
 </style>

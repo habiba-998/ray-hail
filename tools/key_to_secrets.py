@@ -1,4 +1,4 @@
-"""Convert a Google service-account JSON key into the Streamlit Secrets block RAY expects.
+"""Convert a Google service-account JSON key into the Streamlit Secrets block SATRA expects.
 
 Run it YOURSELF, locally, and paste the printed text into
 Streamlit Community Cloud → your app → Settings → Secrets.

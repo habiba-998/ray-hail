@@ -1,5 +1,5 @@
 {
-  "_about": "Crop database for RAY. Values come only from the sources listed (see sources.json). Missing information is stated as unavailable; never estimated. 'ray_note' fields are RAY's own remote-sensing remarks, clearly marked as such.",
+  "_about": "Crop database for SATRA. Values come only from the sources listed (see sources.json). Missing information is stated as unavailable; never estimated. 'ray_note' fields (key name kept for compatibility) are SATRA's own remote-sensing remarks, clearly marked as such.",
   "unavailable_ar": "البيانات غير متوفرة حاليًا",
   "unavailable_en": "Data not currently available",
   "crops": [

@@ -1,4 +1,7 @@
-# Deploying RAY to Streamlit Community Cloud
+# Deploying SATRA | ساترا to Streamlit Community Cloud
+
+> The app URL (`ray-hail.streamlit.app`), repository, Cloud project `ray-hail-2026` and service account
+> `ray-streamlit` keep their original names; renaming them is not needed for the SATRA rebrand.
 
 Result: a public HTTPS URL (`https://<your-app>.streamlit.app`) that works on any phone, tablet or laptop,
 with **real Google Earth Engine data** and without your computer running.
@@ -18,14 +21,14 @@ with **real Google Earth Engine data** and without your computer running.
 Project: **`ray-hail-2026`** (already registered for Earth Engine, API enabled).
 
 1. Open <https://console.cloud.google.com/iam-admin/serviceaccounts?project=ray-hail-2026>
-2. **Create service account** → name `ray-streamlit` → *Create and continue*.
+2. **Create service account** → name `ray-streamlit` (existing name, kept) → *Create and continue*.
 3. Grant roles:
    - **Earth Engine Resource Viewer** (`roles/earthengine.viewer`)
    - **Service Usage Consumer** (`roles/serviceusage.serviceUsageConsumer`)
 
    → *Continue* → *Done*.
 4. Open the new account → **Keys** → **Add key** → **Create new key** → **JSON** → the file downloads.
-   Move it to a private folder **outside** the RAY project and outside OneDrive (e.g. `C:\keys\`).
+   Move it to a private folder **outside** the project folder and outside OneDrive (e.g. `C:\keys\`).
 5. Print the ready-to-paste secrets block (runs locally, only prints to your terminal):
 
    ```bash

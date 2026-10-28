@@ -10,7 +10,7 @@ The supervised Random Forest is **only** trained if you add real field labels:
 
 1. Copy `labels_template.csv` to `labels.csv`.
 2. Add one row per field observation: date, location, the satellite features for
-   that date/location (e.g. exported from the RAY zone table in Earth Engine mode)
+   that date/location (e.g. exported from the SATRA zone table in Earth Engine mode)
    and a `label` from real observation, e.g. `stressed` / `not_stressed`
    (soil-moisture probe, agronomist visual score, irrigation fault log …).
    Inspection-log records typed into the app are NOT verified labels unless the collection procedure is documented.
@@ -21,5 +21,5 @@ In this prototype the app does **not** train the Random Forest or report any
 performance metric. It is reserved for future supervised calibration once real,
 independently collected field observations exist.
 
-Do **not** create labels from RAY's own rule output: the model would only learn to
+Do **not** create labels from SATRA's own rule output: the model would only learn to
 copy the rules and its "accuracy" would be meaningless.

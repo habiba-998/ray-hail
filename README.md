@@ -1,13 +1,19 @@
-# رَيّ | RAYY — satellite screening of irrigated farms in Hail
+<p align="center"><img src="assets/branding/satra-logo-ar.svg" alt="ساترا" width="340">&nbsp;&nbsp;<img src="assets/branding/satra-logo-en.svg" alt="SATRA" width="380"></p>
 
-RAYY is an Arabic-first **decision-support prototype**. It answers one question:
+# ساترا | SATRA — agricultural earth observation for inspection prioritisation
+
+**منصة ذكية لرصد الأراضي الزراعية من الفضاء** · *From Space to Smarter Agricultural Decisions*
+
+SATRA (formerly RAYY / رَيّ) is an Arabic-first **decision-support prototype** that turns satellite imagery, vegetation
+and moisture-related indicators, land-surface temperature and temporal analysis into inspection priorities. It answers
+one question:
 
 > **Which farm zones should be inspected first, what evidence makes them a priority, and what should be checked next?**
 
 It analyses Sentinel-2 vegetation indices, Landsat land-surface temperature and ERA5-Land weather context over a
 regular grid of zones, and ranks the zones for **field inspection**.
 
-> RAYY is a **screening and prioritisation tool**. It is **not** a plant-disease diagnostic system, **not** a
+> SATRA is a **screening and prioritisation tool**. It is **not** a plant-disease diagnostic system, **not** a
 > soil-moisture sensor, **not** an irrigation controller and has **no proven water savings**. All thresholds are
 > provisional and uncalibrated. No accuracy, precision, recall, water-saving or lead-time figures exist.
 > The project has no endorsement from the Ministry of Environment, Water and Agriculture (MEWA) or any other body.
@@ -37,13 +43,40 @@ This decision is **provisional**: it follows the existing code, not validated ev
 | 💧 الري | Irrigation-check workflow: highest-priority zone, hedged "possible water stress" wording, possible causes, grouped checklists. No volumes, no automatic control |
 | 📋 سجل الفحص الميداني | Non-photographic inspection log: date, zone, what was found, irrigation issue yes/no, alternative causes, optional measured soil moisture, inspector, notes; plus a count-only comparison of satellite flags with inspections |
 | 🔬 التفاصيل التقنية | Indices, bands, resolutions, masks, thresholds (marked provisional), priority-index formula, temporal rule, Isolation Forest and Random Forest status, limitations, values used in this run |
-| ℹ️ عن رَيّ | What RAYY does and does not do, privacy |
+| ℹ️ عن ساترا | What SATRA does and does not do, privacy, logo |
 
 **Removed in this revision:** the plant-photography workflow (photo upload, colour screening of photos, photo-based
 "first suspicion" of a disease, photo storage, related navigation, help text and tests). Satellite imagery, maps,
 indices, temporal analysis and the inspection history were kept.
 
-## 3. Evidence categories (never mixed)
+## 3. Visual identity
+
+| Asset | File | Use |
+|---|---|---|
+| Symbol (colour) | `assets/branding/satra-symbol.svg` | App header, small layouts – master geometry |
+| Horizontal logo, Arabic | `assets/branding/satra-logo-ar.svg` | About page (Arabic), documents |
+| Horizontal logo, English | `assets/branding/satra-logo-en.svg` | About page (English), documents |
+| Monochrome symbol | `assets/branding/satra-symbol-mono-dark.svg`, `…-mono-light.svg` | Single-colour use on light / dark backgrounds |
+| Favicon | `assets/branding/favicon.png` | Browser tab (`st.set_page_config`) |
+
+**Symbol:** a satellite on its orbit observes a top-down field mosaic – a centre-pivot field (typical of Hail), a
+parcel with crop rows and one parcel highlighted in amber as the place to inspect, reached by a faint observation
+beam. It reads as "observing agricultural land from space", not "a plant". The derived files are generated from the
+master symbol by `python tools/build_brand_assets.py`. The lockups use live text in IBM Plex Sans / IBM Plex Sans
+Arabic; viewers without those fonts fall back to system fonts.
+
+**Palette** (tokens in `src/brand.py`): deep green `#174D3A`, satellite navy `#142B45`, teal `#168C86`, warm off-white
+`#F6F7F2`, text `#263238`. **Status colours always come with a label and an icon:** red `#C94C4C` = higher inspection
+priority (not a diagnosis), amber `#D99A2B` = follow-up, green `#2F8A5B` = no clear abnormal signal (not a claim of
+health), grey `#7A858C` = insufficient / unavailable data.
+
+**Names kept for compatibility** (renaming would break deployment or existing data): the repository and Streamlit app
+URL `ray-hail`, the Google Cloud project `ray-hail-2026`, the service account `ray-streamlit`, the SQLite file
+`data/user_data/ray.db`, the `ray_note` keys in `data/knowledge/crops.json`, and the `RAY_DATA_DIR` environment
+variable (still honoured; `SATRA_DATA_DIR` is preferred). The unit tests fail if the old product name appears in any
+user-facing text.
+
+## 4. Evidence categories (never mixed)
 
 1. **Satellite observations** – Sentinel-2 L2A reflectance, Landsat ST_B10, ERA5-Land values.
 2. **Calculated indicators** – NDVI, NDRE, NDMI, LST anomaly, NDVI change, relative NDVI.
@@ -52,7 +85,7 @@ indices, temporal analysis and the inspection history were kept.
 5. **Hypotheses** – "possible water stress", "possible heat", … (always labelled as needing field verification).
 6. **Field records** – typed inspection notes; user-entered, **not verified ground truth**.
 
-## 4. Analytical workflow
+## 5. Analytical workflow
 
 ```
 Sentinel-2 dates over the farm (≥50 % clear)  →  latest clear date + clear date ≥10 days earlier
@@ -147,7 +180,7 @@ Outcome measures that can be collected later (no values exist today): share of f
 zones assessable with valid observations; time to prioritise inspections; agreement with verified observations;
 false-alert frequency; change in inspection workload against a **defined** baseline.
 
-## 5. Real, demo and unavailable data
+## 6. Real, demo and unavailable data
 
 | State | When | What the user sees |
 |---|---|---|
@@ -155,7 +188,7 @@ false-alert frequency; change in inspection workload against a **defined** basel
 | **DEMO** | **No** Earth Engine credentials configured at all | Yellow banner on every page: simulated data, not a real farm. Simulated dates are labelled as such |
 | **UNAVAILABLE** | Credentials configured but connection/retrieval failed, or no clear image | Red status + category message (credentials / network / no clear image / other) and a retry button. **No results are shown and demo data is never substituted** |
 
-## 6. Installation and running
+## 7. Installation and running
 
 Python 3.11–3.12.
 
@@ -176,7 +209,7 @@ Without credentials the app opens in DEMO mode.
 | `EE_SERVICE_ACCOUNT_JSON` | env var or Streamlit secret | Service-account key JSON (string) |
 | `[ee_service_account]` | Streamlit secrets table | Same key as individual fields (see `.streamlit/secrets.toml.example`) |
 | `[supabase] url`, `service_key` | Streamlit secrets | Optional persistent storage of inspection records |
-| `RAY_DATA_DIR` | env var | Optional local SQLite folder (used by tests) |
+| `SATRA_DATA_DIR` (or legacy `RAY_DATA_DIR`) | env var | Optional local SQLite folder (used by tests) |
 
 Never commit `.streamlit/secrets.toml` or key files (they are git-ignored).
 
@@ -185,12 +218,12 @@ Never commit `.streamlit/secrets.toml` or key files (they are git-ignored).
 Streamlit Community Cloud redeploys automatically when the connected branch is pushed (see [DEPLOYMENT.md](DEPLOYMENT.md)).
 If you use Supabase and created the tables with an earlier schema, run `db/migrations/2026-10_inspection_log.sql` once.
 
-## 7. Tests
+## 8. Tests
 
 **No credentials needed (demo / synthetic data):**
 
 ```bash
-python -m pytest tests/test_rayy.py -q   # unit tests: indices, scoring, missing/cloudy data, temporal, IF, states, records
+python -m pytest tests/test_satra.py -q  # unit tests: indices, scoring, missing/cloudy data, temporal, IF, states, records, brand
 python -m tests.core_test                # knowledge base, fusion, storage, weather summary
 python -m tests.smoke_test               # demo pipeline without UI
 python -m tests.ui_test                  # headless UI in demo mode + a deliberately non-existent Earth Engine project
@@ -205,7 +238,7 @@ python -m tests.ui_test YOUR_PROJECT_ID  # everything above + every page again o
 
 On Windows set `PYTHONUTF8=1` so the Arabic test output prints.
 
-## 8. Status of each part
+## 9. Status of each part
 
 **Implemented and tested (automated, demo/synthetic data):** index formulas; zone scoring incl. cloudy, no-crop and
 too-few-indicator cases; temporal summary; Isolation Forest behaviour and per-zone minimum; REAL/DEMO/UNAVAILABLE
@@ -221,16 +254,17 @@ Isolation Forest usefulness; LST comparability.
 **Planned:** field-boundary detection to replace the grid; crop-type and growth-stage-aware baselines; seasonal
 same-zone baselines from previous years; calibration with paired field measurements; ET-based water requirement.
 
-## 9. Data needed before any scientific performance claim
+## 10. Data needed before any scientific performance claim
 
 Paired satellite/field observations per crop in Hail (soil-moisture probes, leaf water potential or standardised visual
-scores), collected independently of RAYY's rules, with inspections of unflagged zones chosen at random; documented
+scores), collected independently of SATRA's rules, with inspections of unflagged zones chosen at random; documented
 inspection procedure; real field/pivot boundaries; crop calendars. Water-saving claims need a controlled comparison.
 
-## 10. Repository layout
+## 11. Repository layout
 
 ```
 app.py                     entry point: settings, data-status handling, pipeline calls
+src/brand.py               product name, taglines, palette, logo paths (single source)
 src/config.py              AOIs, dataset IDs, ALL thresholds
 src/data_acquisition.py    Earth Engine queries (Sentinel-2, Landsat, ERA5-Land, Sentinel-1)
 src/demo_data.py           simulated farm (DEMO only)
@@ -244,6 +278,7 @@ src/storage.py             inspection records (SQLite / Supabase)
 src/validation.py          satellite-flag vs inspection counts
 src/weather.py, knowledge.py, visualization.py, raster_io.py
 src/ui/                    farmer.py (pages), details.py (technical page), common.py, i18n.py, styles.py
+assets/branding/            logo system (SVG) + favicon; tools/build_brand_assets.py regenerates derived files
 db/schema.sql, db/migrations/
 tests/
 ```
